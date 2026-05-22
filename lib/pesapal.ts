@@ -65,7 +65,7 @@ export async function initiatePesapalPayment(
       };
     }
   } catch (error) {
-    console.error('[v0] PesaPal Error:', error);
+    console.error('PesaPal Error:', error);
     return {
       success: false,
       error: 'Payment service unavailable',
@@ -101,7 +101,7 @@ export async function queryPesapalPayment(pesapalReference: string) {
 
     return await statusResponse.json();
   } catch (error) {
-    console.error('[v0] PesaPal Query Error:', error);
+    console.error('PesaPal Query Error:', error);
     return null;
   }
 }
