@@ -1,89 +1,159 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
-import { motion } from 'framer-motion';
+import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { useUser, useClerk } from '@clerk/nextjs';
 import { PremiumButton } from './PremiumButton';
 import { NAV_LINKS, BRAND } from '@/lib/constants';
 import { isAdminUser } from '@/lib/admin';
 
-export const Navigation: React.FC = () => {
+/* ─────────────────────────────────────
+   NAVIGATION — Floating Luxury Glass Bar
+   Cinematic glass morphism, never cheap
+───────────────────────────────────── */
+
+const navSpring = { damping: 18, stiffness: 260 };
+
+export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const adminStatus = user ? isAdminUser(user.id) : false;
+  const mx = useMotionValue(0.5);
 
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+    const onScroll = () => setIsScrolled(window.scrollY > 50);
+    const onMove  = (e: MouseEvent) =>
+      mx.set(Math.min(1, Math.max(0, (e.clientX / window.innerWidth))));
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('mousemove', onMove, { passive: true });
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('mousemove', onMove);
     };
+  }, [mx]);
 
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  // Subtle colour shift from cyan → blue
+  const accentH = useTransform(mx, [0, 1], [185, 220]);
+  const accent   = useTransform(
+    accentH,
+    (h) => `hsl(${h}, 88%, 58%)`
+  );
+
+  const baseBg = isScrolled
+    ? 'rgba(4,8,18,0.78)'
+    : 'rgba(4,8,18,0.22)';
 
   return (
     <motion.nav
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled
-          ? 'glassmorphic-dark backdrop-blur-xl'
-          : 'bg-gradient-to-b from-slate-900/50 to-transparent'
-      }`}
-      initial={{ y: -100 }}
-      animate={{ y: 0 }}
-      transition={{ duration: 0.5 }}
+      role="navigation"
+      aria-label="Primary navigation"
+      initial={{ y: -120, opacity: 0 }}
+      animate={{ y: 0, opacity: 1 }}
+      transition={{ type: 'spring', damping: 22, stiffness: 130, delay: 0.1 }}
+      className="fixed top-0 left-0 right-0 z-[100]"
     >
-      <div className="max-w-7xl mx-auto px-6 py-4">
+      {/* ─ Frost substrate (always rendered to avoid re-calc) ─ */}
+      <div
+        className="absolute inset-0 -z-10 rounded-b-2xl transition-all duration-500"
+        style={{
+          background: baseBg,
+          backdropFilter: isScrolled
+            ? 'blur(28px) saturate(200%)'
+            : 'blur(12px) saturate(160%)',
+          WebkitBackdropFilter: isScrolled
+            ? 'blur(28px) saturate(200%)'
+            : 'blur(12px) saturate(160%)',
+          borderBottom: `1px solid ${isScrolled ? 'rgba(34,211,238,0.08)' : 'rgba(34,211,238,0.04)'}`,
+          boxShadow: isScrolled
+            ? '0 20px 60px -12px rgba(0,0,0,0.8), 0 4px 20px -8px rgba(34,211,238,0.06)'
+            : '0 -8px 32px -8px rgba(0,0,0,0.5)',
+        }}
+      />
+
+      {/* ─ Accent highlight orb ─ */}
+      <motion.div
+        className="pointer-events-none absolute inset-x-0 -top-[1px] h-px"
+        style={{
+          background: `linear-gradient(90deg,
+            transparent  0%,
+            ${accent as any as string} 40%,
+            rgba(16,185,129,0.6) 60%,
+            transparent 100%
+          )`,
+        }}
+      />
+
+      {/* ─ Nav content ─ */}
+      <div className="max-w-7xl mx-auto px-6 lg:px-10 py-3.5">
         <div className="flex items-center justify-between">
+
           {/* Logo */}
-          <Link href="/" className="group">
+          <Link href="/" className="group flex items-center gap-2.5 no-underline">
             <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              className="flex items-center gap-2 cursor-pointer"
+              whileHover={{ scale: 1.08 }}
+              className="w-9 h-9 rounded-xl flex items-center justify-center text-white font-bold text-sm
+                         bg-gradient-to-br from-cyan-400 to-blue-600
+                         shadow-[0_0_18px_-4px_rgba(34,211,238,0.6)]
+                         group-hover:shadow-[0_0_30px_-4px_rgba(34,211,238,0.85)]
+                         transition-shadow duration-400"
             >
-              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-400 flex items-center justify-center text-white font-bold text-lg">
-                D
-              </div>
-              <span className="font-bold text-lg text-white hidden sm:inline">
-                {BRAND.name}
-              </span>
+              D
             </motion.div>
+            <span className="font-serif font-bold text-base text-white/90 group-hover:text-white transition-colors hidden sm:inline">
+              {BRAND.name}
+            </span>
           </Link>
 
-          {/* Nav Links */}
-          <div className="hidden md:flex items-center gap-8">
+          {/* Desktop links */}
+          <div className="hidden md:flex items-center gap-10">
             {NAV_LINKS.map((link) => (
               <Link
                 key={link.href}
                 href={link.href}
-                className="text-gray-300 hover:text-white transition-colors duration-300 font-medium"
+                className="
+                  relative text-[11px] uppercase tracking-[0.22em] font-mono
+                  text-gray-400/80 hover:text-cyan-300 no-underline
+                  py-1 transition-colors duration-250
+                "
               >
-                {link.label}
+                <span className="transition-colors duration-250">{link.label}</span>
+                <motion.span
+                  className="absolute -bottom-0.5 left-0 h-px bg-cyan-400/60"
+                  initial={{ scaleX: 0 }}
+                  whileHover={{ scaleX: 1 }}
+                  transition={{ duration: 0.3, ease: 'easeOut' }}
+                  style={{ transformOrigin: 'left' }}
+                />
               </Link>
             ))}
           </div>
 
-          {/* CTA Buttons */}
-          <div className="flex items-center gap-4">
+          {/* Auth actions */}
+          <div className="flex items-center gap-2.5">
             {isLoaded && user ? (
               <>
                 {adminStatus && (
                   <Link href="/admin">
-                    <PremiumButton variant="outline" size="sm">
-                      Admin Panel
+                    <PremiumButton variant="ghost" size="sm">
+                      Admin
                     </PremiumButton>
                   </Link>
                 )}
                 <Link href="/dashboard/tenant">
-                  <PremiumButton variant="outline" size="sm">
+                  <PremiumButton variant="ghost" size="sm">
                     Dashboard
                   </PremiumButton>
                 </Link>
                 <button
                   onClick={() => signOut()}
-                  className="px-4 py-2 text-sm font-medium text-white hover:text-cyan-400 transition-colors"
+                  className="
+                    px-4 py-2 text-[11px] uppercase tracking-[0.18em] font-mono
+                    text-gray-500/70 hover:text-cyan-300/90 no-underline
+                    border border-transparent hover:border-cyan-400/15 rounded-lg
+                    transition-all duration-300
+                  "
                 >
                   Sign Out
                 </button>
@@ -91,12 +161,16 @@ export const Navigation: React.FC = () => {
             ) : (
               <>
                 <Link href="/auth/login">
-                  <PremiumButton variant="outline" size="sm">
+                  <PremiumButton variant="ghost" size="sm">
                     Sign In
                   </PremiumButton>
                 </Link>
                 <Link href="/auth/signup">
-                  <PremiumButton variant="solid" size="sm">
+                  <PremiumButton variant="solid" size="sm" className="
+                    bg-gradient-to-r from-cyan-500/90 to-blue-500/90
+                    hover:from-cyan-400/90 hover:to-blue-400/90
+                    shadow-[0_0_18px_-4px_rgba(34,211,238,0.45)]
+                  ">
                     Get Started
                   </PremiumButton>
                 </Link>
@@ -107,4 +181,4 @@ export const Navigation: React.FC = () => {
       </div>
     </motion.nav>
   );
-};
+}

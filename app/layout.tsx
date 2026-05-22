@@ -1,43 +1,80 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Playfair_Display, Inter } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+/* ─── Cinematic type scale ─── */
+const _inter  = Inter({
+  subsets: ['latin'],
+  display: 'swap',
+  variable: '--font-inter',
+});
+const _serif  = Playfair_Display({
+  subsets: ['latin'],
+  weight: ['700', '800', '900'],
+  display: 'swap',
+  variable: '--font-display',
+});
 
 export const metadata: Metadata = {
-  title: 'Dwell KE - Premium Property Management',
-  description: 'Discover verified properties in Kenya with Dwell KE. Secure bookings, trusted landlords, and seamless transactions.',
+  title: 'Dwell KE — Premium Property Platform for Kenya',
+  description:
+    'Luxury verified properties in Nairobi, Mombasa, Nakuru & beyond. ' +
+    'Instant M-Pesa bookings, trusted landlords, and AI-powered property matching — reimagined.',
+  keywords: [
+    'Dwell KE', 'Kenya properties', 'Nairobi apartments', 'Mombasa beachfront',
+    'verified landlords', 'M-Pesa property', 'luxury Kenya real estate',
+  ],
+  openGraph: {
+    title: 'Dwell KE — Luxury Properties in Kenya',
+    description: 'Premium verified properties — Nairobi, Mombasa, Nakuru & beyond.',
+    type: 'website',
+    locale: 'en_KE',
+  },
   viewport: {
-    width: 'device-width',
+    width:      'device-width',
     initialScale: 1,
     maximumScale: 1,
+    userScalable: false,
   },
-       icons: {
-         icon: [
-           {
-             url: '/favicon.ico',
-             href: '/favicon.ico',
-           },
-         ],
-       },
+  icons: {
+    icon: [{ url: '/favicon.ico', href: '/favicon.ico' }],
+  },
 }
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <ClerkProvider>
-      <html lang="en" className="dark scroll-smooth">
-        <body className="font-sans antialiased bg-background text-foreground">
+      <html
+        lang="en"
+        className="dark scroll-smooth"
+        style={{
+          // Inject CSS vars so globals uses the right palettes
+          ['--font-display' as string]: _serif.variable,
+          ['--font-inter'   as string]: _inter.variable,
+        }}
+      >
+        <body
+          className={`
+            ${_inter.variable}
+            ${_serif.variable}
+            font-sans
+            antialiased
+            bg-obsidian
+            text-[#F1F5F9]
+            min-h-screen
+            overflow-x-hidden
+          `}
+        >
           {children}
           {process.env.NODE_ENV === 'production' && <Analytics />}
         </body>
       </html>
     </ClerkProvider>
-  )
+  );
 }

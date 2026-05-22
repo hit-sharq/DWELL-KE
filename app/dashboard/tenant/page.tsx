@@ -17,7 +17,11 @@ export default function TenantDashboard() {
       <div className="py-12 px-6">
         <div className="max-w-7xl mx-auto">
           {/* Header */}
-          <motion.div {...scrollReveal} className="mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
+          >
             <h1 className="text-4xl font-bold text-white mb-2">
               Welcome back, John
             </h1>
@@ -28,13 +32,15 @@ export default function TenantDashboard() {
 
           {/* Stats Grid */}
           <motion.div
-            variants={scrollRevealStagger.container}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "0px 0px -100px 0px" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
             className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"
           >
-            <motion.div variants={scrollRevealStagger.item}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.1 }}
+            >
               <StatsCard
                 label="Active Bookings"
                 value={2}
@@ -42,21 +48,33 @@ export default function TenantDashboard() {
                 trend={{ value: 20, direction: 'up' }}
               />
             </motion.div>
-            <motion.div variants={scrollRevealStagger.item}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.2 }}
+            >
               <StatsCard
                 label="Saved Properties"
                 value={12}
                 icon="❤️"
               />
             </motion.div>
-            <motion.div variants={scrollRevealStagger.item}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
               <StatsCard
                 label="Unread Messages"
                 value={3}
                 icon="💬"
               />
             </motion.div>
-            <motion.div variants={scrollRevealStagger.item}>
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+            >
               <StatsCard
                 label="Account Rating"
                 value="4.8/5"
@@ -66,7 +84,11 @@ export default function TenantDashboard() {
           </motion.div>
 
           {/* Recent Bookings */}
-          <motion.div {...scrollReveal} className="mb-12">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
+          >
             <GlassmorphicCard>
               <h2 className="text-2xl font-bold text-white mb-6">
                 Recent Bookings
@@ -96,7 +118,10 @@ export default function TenantDashboard() {
           </motion.div>
 
           {/* Quick Actions */}
-          <motion.div {...scrollReveal}>
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
             <GlassmorphicCard>
               <h2 className="text-2xl font-bold text-white mb-6">
                 Quick Actions

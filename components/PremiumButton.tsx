@@ -11,38 +11,55 @@ interface PremiumButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   children: React.ReactNode;
 }
 
-export const PremiumButton: React.FC<PremiumButtonProps> = ({
+/* ─────────────────────────────────────
+   PREMIUM BUTTON — Luxury Glow Button
+   Cinematic gradient + glow states
+───────────────────────────────────── */
+export function PremiumButton({
   variant = 'solid',
   size = 'md',
   className,
   children,
   ...props
-}) => {
-  const baseStyles = 'font-medium transition-all duration-300 rounded-lg cursor-pointer';
+}: PremiumButtonProps) {
+  const base =
+    'relative overflow-hidden font-medium tracking-wide cursor-pointer rounded-xl ' +
+    'transition-all duration-300 ease-out';
 
-  const variantStyles = {
-    solid: 'bg-blue-500 hover:bg-blue-600 text-white shadow-lg hover:shadow-xl hover:shadow-blue-500/20',
-    outline: 'border border-blue-400/50 text-blue-300 hover:border-blue-300 hover:bg-blue-500/10',
-    ghost: 'text-blue-400 hover:text-blue-300 hover:bg-blue-500/5',
+  const sizes = {
+    sm: 'px-4 py-2 text-[11px] uppercase tracking-[0.18em]',
+    md: 'px-6 py-2.5 text-sm',
+    lg: 'px-9 py-3.5 text-base',
   };
 
-  const sizeStyles = {
-    sm: 'px-3 py-1.5 text-sm',
-    md: 'px-6 py-2.5 text-base',
-    lg: 'px-8 py-3.5 text-lg',
+  const variants: Record<ButtonVariant, string> = {
+    solid: `
+      bg-gradient-to-r from-cyan-500 via-blue-500 to-blue-600
+      text-white
+      shadow-[0_0_22px_-4px_rgba(34,211,238,0.45)]
+      hover:shadow-[0_0_44px_-4px_rgba(34,211,238,0.72)]
+      hover:-translate-y-[1px]
+      active:translate-y-0 active:shadow-[0_0_14px_-4px_rgba(34,211,238,0.35)]
+    `,
+    outline: `
+      border border-cyan-400/40 text-cyan-300/90
+      bg-white/[0.025]
+      hover:bg-cyan-400/[0.08] hover:border-cyan-300/60 hover:shadow-[0_0_22px_-6px_rgba(34,211,238,0.28)]
+      active:translate-y-[1px]
+    `,
+    ghost: `
+      text-cyan-300/70
+      hover:bg-cyan-400/[0.06] hover:text-cyan-200/90
+      active:bg-cyan-400/[0.04]
+    `,
   };
 
   return (
     <button
-      className={cn(
-        baseStyles,
-        variantStyles[variant],
-        sizeStyles[size],
-        className
-      )}
+      className={cn(base, sizes[size], variants[variant], className)}
       {...props}
     >
       {children}
     </button>
   );
-};
+}
