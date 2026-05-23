@@ -32,15 +32,16 @@ export const metadata: Metadata = {
     type: 'website',
     locale: 'en_KE',
   },
-  viewport: {
-    width:      'device-width',
-    initialScale: 1,
-    maximumScale: 1,
-    userScalable: false,
-  },
   icons: {
     icon: [{ url: '/favicon.ico', href: '/favicon.ico' }],
   },
+}
+
+export const viewport = {
+  width:      'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 }
 
 export default function RootLayout({
@@ -53,6 +54,7 @@ export default function RootLayout({
       <html
         lang="en"
         className="dark scroll-smooth"
+        suppressHydrationWarning
         style={{
           // Inject CSS vars so globals uses the right palettes
           ['--font-display' as string]: _serif.variable,
@@ -70,6 +72,7 @@ export default function RootLayout({
             min-h-screen
             overflow-x-hidden
           `}
+          suppressHydrationWarning
         >
           {children}
           {process.env.NODE_ENV === 'production' && <Analytics />}

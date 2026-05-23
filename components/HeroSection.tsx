@@ -49,39 +49,45 @@ function useParallax() {
 function CineParticles() {
   const particles = useMemo(() => {
     const count = 40;
+    const rng = (i: number) => Math.abs(Math.sin((i * 127.1 + 269.5) * 0.01745329)); // deterministic "random" 0-1, no Math.random()
     return Array.from({ length: count }, (_, i) => {
-      const dur = 6 + Math.random() * 12;
-      const del = Math.random() * -10;
-      const sz = 1.5 + Math.random() * 3;
+      const s  = rng(i);
+      const s2 = rng(i + 100);
+      const s3 = rng(i + 200);
+      const s4 = rng(i + 300);
+      const dur = 6 + s  * 12;
+      const del = s2 * -10;
+      const sz  = 1.5 + s3 * 3;
+      const op  = 0.10 + s4 * 0.40;
 
       return {
-        id: i,
-        x: `${(Math.random() * 100).toFixed(1)}%`,
-        y: `${(Math.random() * 100).toFixed(1)}%`,
+        id:  i,
+        x:   `${(rng(i + 400) * 100).toFixed(1)}%`,
+        y:   `${(rng(i + 500) * 100).toFixed(1)}%`,
         dur: `${dur.toFixed(1)}s`,
         del: `${del.toFixed(1)}s`,
-        sz: `${sz}px`,
-        // Note: opacity and boxShadow are intentionally computed inline
-        // (without hooks) so they do not require nested hook calls.
+        sz:  `${sz}px`,
+        op:  +op.toFixed(4),       // opacity 0.10 – 0.50  — deterministic, no Math.random()
+        bx:  `0 0 ${(4 + s2 * 8).toFixed(1)}px rgba(34,211,238,0.4)`,   // boxShadow — deterministic
       };
     });
   }, []);
 
   return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true">
+    <div className="absolute inset-0 pointer-events-none overflow-hidden" aria-hidden="true" suppressHydrationWarning>
       {particles.map((p) => (
         <span
           key={p.id}
           className="absolute rounded-full bg-cyan-400 animate-[float-node_var_1_ease-in-out_infinite]"
           style={{
-            left: p.x,
-            top: p.y,
-            width: p.sz,
-            height: p.sz,
+            left:            p.x,
+            top:             p.y,
+            width:           p.sz,
+            height:          p.sz,
             animationDuration: p.dur,
-            animationDelay: p.del,
-            opacity: 0.15 + Math.random() * 0.35,
-            boxShadow: `0 0 ${Math.random() * 8 + 4}px rgba(34,211,238,0.4)`,
+            animationDelay:  p.del,
+            opacity:         p.op,
+            boxShadow:       p.bx,
           }}
         />
       ))}

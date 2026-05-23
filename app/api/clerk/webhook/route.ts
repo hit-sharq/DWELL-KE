@@ -25,13 +25,17 @@ export async function POST(req: NextRequest) {
       const lastName = evt.data.last_name || '';
       const imageUrl = evt.data.image_url || '';
 
+      // Derive role from Clerk publicMetadata.role (set during signup role selection)
+      // Falls back to 'tenant' if no role was set
+      const role = (evt.data.public_metadata as Record<string, unknown>)?.role as string | undefined;
+      const finalRole = role === 'landlord' || role === 'admin' ? role : 'tenant';
+
       // Check if user already exists
       const existingUser = await prisma.user.findUnique({
         where: { clerkId },
       });
 
       if (!existingUser) {
-        // Create new user
         await prisma.user.create({
           data: {
             clerkId,
@@ -39,12 +43,12 @@ export async function POST(req: NextRequest) {
             firstName,
             lastName,
             profileImage: imageUrl,
-            role: 'tenant',
+            role: finalRole,
             isVerified: false,
           },
         });
 
-        console.log(`[Webhook] User created: ${clerkId}`);
+        console.log(`[Webhook] User created: ${clerkId} as ${finalRole}`);
       }
     }
 
@@ -65,12 +69,16 @@ export async function POST(req: NextRequest) {
       const lastName = evt.data.last_name || '';
       const imageUrl = evt.data.image_url || '';
 
+      // Sync role from publicMetadata if it changed
+      const role = (evt.data.public_metadata as Record<string, unknown>)?.role as string | undefined;
+
       await prisma.user.update({
         where: { clerkId },
         data: {
           firstName,
           lastName,
           profileImage: imageUrl,
+          ...(role ? { role } : {}),
         },
       });
 

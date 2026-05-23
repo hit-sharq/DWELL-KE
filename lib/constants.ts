@@ -84,6 +84,7 @@ export const PROPERTY_TYPES = [
   "House",
   "Studio",
   "Townhouse",
+  "Penthouse",
   "Condo",
   "Bedsitter",
 ];

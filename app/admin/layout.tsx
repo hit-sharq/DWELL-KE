@@ -1,30 +1,22 @@
-'use client';
-
 import { ReactNode } from 'react';
-import { useAuth } from '@clerk/nextjs';
-import { useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { auth } from '@clerk/nextjs/server';
+import { prisma } from '@/lib/db';
+import { redirect } from 'next/navigation';
 import { isAdminUser } from '@/lib/admin';
 import { AdminNav } from '@/components/AdminNav';
 
-export default function AdminLayout({ children }: { children: ReactNode }) {
-  const { userId } = useAuth();
-  const router = useRouter();
+export default async function AdminLayout({ children }: { children: ReactNode }) {
+  const { userId } = await auth();
+  if (!userId) redirect('/auth/login');
 
-  useEffect(() => {
-    if (userId && !isAdminUser(userId)) {
-      router.push('/dashboard/tenant');
-    }
-  }, [userId, router]);
+  if (!isAdminUser(userId)) redirect('/dashboard/tenant');
 
   return (
     <div className="min-h-screen bg-background">
       <AdminNav />
-      <div className="flex">
-        <div className="flex-1 ml-64">
-          {children}
-        </div>
-      </div>
+      <main className="ml-64">
+        {children}
+      </main>
     </div>
   );
 }

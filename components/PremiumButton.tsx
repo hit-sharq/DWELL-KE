@@ -20,6 +20,7 @@ export function PremiumButton({
   size = 'md',
   className,
   children,
+  asChild: _asChild,          // accepted but intentionally stripped — slot rendering not needed here
   ...props
 }: PremiumButtonProps) {
   const base =

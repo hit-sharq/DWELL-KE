@@ -141,11 +141,20 @@ export function Navigation() {
                     </PremiumButton>
                   </Link>
                 )}
-                <Link href="/dashboard/tenant">
-                  <PremiumButton variant="ghost" size="sm">
-                    Dashboard
-                  </PremiumButton>
-                </Link>
+                {/* Role-based dashboard link */}
+                {(() => {
+                  const role = (user as any)?.publicMetadata?.role as string | undefined;
+                  const dashboardHref = role === 'landlord' ? '/dashboard/landlord'
+                    : (role === 'admin'      ? '/dashboard/admin'
+                    : '/dashboard/tenant');
+                  return (
+                    <Link href={dashboardHref}>
+                      <PremiumButton variant="ghost" size="sm">
+                        Dashboard
+                      </PremiumButton>
+                    </Link>
+                  );
+                })()}
                 <button
                   onClick={() => signOut()}
                   className="

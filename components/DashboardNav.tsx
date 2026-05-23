@@ -39,7 +39,7 @@ export const DashboardNav: React.FC<DashboardNavProps> = ({ role }) => {
   };
 
   return (
-    <nav className="glassmorphic-dark border-b border-slate-700/50 sticky top-0 z-40">
+    <nav className="glass border-b border-slate-700/50 sticky top-0 z-40">
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between">
           {/* Logo */}

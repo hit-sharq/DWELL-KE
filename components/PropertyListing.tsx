@@ -8,7 +8,7 @@ import { PremiumButton } from './PremiumButton';
 import { scrollReveal } from '@/lib/animations';
 
 interface Property {
-  id: number;
+  id: string;
   title: string;
   price: number;
   location: string;
@@ -49,8 +49,8 @@ export function PropertyListing() {
 
       const data = await response.json();
       setProperties(data);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to fetch properties');
       console.error('[PropertyListing] Error:', err);
     } finally {
       setIsLoading(false);

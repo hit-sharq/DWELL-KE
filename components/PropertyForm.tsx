@@ -38,13 +38,14 @@ export function PropertyForm() {
       const response = await fetch('/api/properties', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          ...formData,
-          price: parseFloat(formData.price),
-          bedrooms: parseInt(formData.bedrooms),
-          bathrooms: parseInt(formData.bathrooms),
-          images,
-        }),
+      body: JSON.stringify({
+        ...formData,
+        price: parseFloat(formData.price),
+        bedrooms: parseInt(formData.bedrooms, 10),
+        bathrooms: parseInt(formData.bathrooms, 10),
+        amenities: formData.amenities.split(',').map(s => s.trim()).filter(Boolean),
+        images,
+      }),
       });
 
       if (!response.ok) throw new Error('Failed to create property');
@@ -61,8 +62,8 @@ export function PropertyForm() {
         type: 'apartment',
       });
       setImages([]);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An unexpected error occurred');
     } finally {
       setIsLoading(false);
     }
