@@ -1,74 +1,114 @@
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
-import { initiatePesapalPayment } from '@/lib/pesapal';
+import { initiatePayment, initPesaPal } from '@/lib/pesapal';
 import { NextRequest, NextResponse } from 'next/server';
 
+// Initialize PesaPal on server start
+initPesaPal();
+
 export async function POST(req: NextRequest) {
-  const { userId } = await auth();
-
-  if (!userId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-  }
-
   try {
-    const { bookingId } = await req.json();
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    // Get booking details
+    const body = await req.json();
+    const { bookingId } = body;
+
+    if (!bookingId) {
+      return NextResponse.json(
+        { error: 'Booking ID is required' },
+        { status: 400 }
+      );
+    }
+
+    // Get booking
     const booking = await prisma.booking.findUnique({
       where: { id: bookingId },
-      include: { tenant: true, property: true },
+      include: {
+        tenant: {
+          select: {
+            id: true,
+            email: true,
+            firstName: true,
+            lastName: true,
+            phone: true,
+          },
+        },
+        property: {
+          select: {
+            title: true,
+          },
+        },
+      },
     });
 
     if (!booking) {
       return NextResponse.json({ error: 'Booking not found' }, { status: 404 });
     }
 
-    // Check if payment already exists and is completed
+    // Verify ownership
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!user || booking.tenantId !== user.id) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+    }
+
+    // Check if payment already exists for this booking
     const existingPayment = await prisma.payment.findUnique({
       where: { bookingId },
     });
 
     if (existingPayment && existingPayment.status === 'completed') {
       return NextResponse.json(
-        { error: 'Payment already completed' },
+        { error: 'Payment already completed for this booking' },
         { status: 400 }
       );
     }
 
-    // Initiate PesaPal payment
-    const pesapalResponse = await initiatePesapalPayment(
+    // Initiate payment with PesaPal
+    const paymentResponse = await initiatePayment({
       bookingId,
-      booking.totalPrice,
-      booking.tenant.email,
-      `${booking.tenant.firstName} ${booking.tenant.lastName}`
-    );
+      amount: booking.totalPrice,
+      description: `Booking for ${booking.property.title}`,
+      customerEmail: booking.tenant.email,
+      customerName: `${booking.tenant.firstName} ${booking.tenant.lastName}`,
+      customerPhone: booking.tenant.phone || '+254',
+      currency: 'KES',
+    });
 
     // Create or update payment record
     const payment = await prisma.payment.upsert({
       where: { bookingId },
-      update: {
-        reference: pesapalResponse.reference,
-        status: 'pending',
-      },
       create: {
         bookingId,
         amount: booking.totalPrice,
         currency: 'KES',
         status: 'pending',
-        paymentMethod: 'pesapal',
-        reference: pesapalResponse.reference,
+        provider: 'pesapal',
+        orderTrackingId: paymentResponse.order_tracking_id,
+        merchantReference: paymentResponse.merchant_reference,
+      },
+      update: {
+        orderTrackingId: paymentResponse.order_tracking_id,
+        merchantReference: paymentResponse.merchant_reference,
+        status: 'pending',
       },
     });
 
     return NextResponse.json({
-      paymentId: payment.id,
-      reference: pesapalResponse.reference,
-      redirectUrl: pesapalResponse.redirectUrl,
+      payment,
+      redirectUrl: paymentResponse.redirect_url,
     });
   } catch (error: any) {
-    console.error('[Payment Initiate]', error);
+    console.error('[Payment Initiation]', error);
     return NextResponse.json(
-      { error: 'Failed to initiate payment' },
+      {
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to initiate payment',
+      },
       { status: 500 }
     );
   }
