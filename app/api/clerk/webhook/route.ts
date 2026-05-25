@@ -6,9 +6,10 @@ import { NextRequest, NextResponse } from 'next/server';
 export async function POST(req: NextRequest) {
   try {
     const payload = await req.json();
-    const svixId = headers().get('svix-id') || '';
-    const svixTimestamp = headers().get('svix-timestamp') || '';
-    const svixSignature = headers().get('svix-signature') || '';
+    const hdrs = await headers();
+    const svixId = hdrs.get('svix-id') || '';
+    const svixTimestamp = hdrs.get('svix-timestamp') || '';
+    const svixSignature = hdrs.get('svix-signature') || '';
 
     // Verify webhook signature
     const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || '');
@@ -25,12 +26,6 @@ export async function POST(req: NextRequest) {
       const lastName = evt.data.last_name || '';
       const imageUrl = evt.data.image_url || '';
 
-      // Derive role from Clerk publicMetadata.role (set during signup role selection)
-      // Falls back to 'tenant' if no role was set
-      const role = (evt.data.public_metadata as Record<string, unknown>)?.role as string | undefined;
-      const finalRole = role === 'landlord' || role === 'admin' ? role : 'tenant';
-
-      // Check if user already exists
       const existingUser = await prisma.user.findUnique({
         where: { clerkId },
       });
@@ -43,12 +38,12 @@ export async function POST(req: NextRequest) {
             firstName,
             lastName,
             profileImage: imageUrl,
-            role: finalRole,
+            role: evt.data.public_metadata?.role || evt.data.private_metadata?.role || 'tenant',
             isVerified: false,
           },
         });
 
-        console.log(`[Webhook] User created: ${clerkId} as ${finalRole}`);
+        console.log(`[Webhook] User created: ${clerkId} as tenant`);
       }
     }
 
@@ -69,20 +64,22 @@ export async function POST(req: NextRequest) {
       const lastName = evt.data.last_name || '';
       const imageUrl = evt.data.image_url || '';
 
-      // Sync role from publicMetadata if it changed
-      const role = (evt.data.public_metadata as Record<string, unknown>)?.role as string | undefined;
-
-      await prisma.user.update({
+      const existingUser = await prisma.user.findUnique({
         where: { clerkId },
-        data: {
-          firstName,
-          lastName,
-          profileImage: imageUrl,
-          ...(role ? { role } : {}),
-        },
       });
 
-      console.log(`[Webhook] User updated: ${clerkId}`);
+      if (existingUser) {
+        await prisma.user.update({
+          where: { clerkId },
+          data: {
+            firstName,
+            lastName,
+            profileImage: imageUrl,
+          },
+        });
+
+        console.log(`[Webhook] User updated: ${clerkId}`);
+      }
     }
 
     return NextResponse.json({ success: true });

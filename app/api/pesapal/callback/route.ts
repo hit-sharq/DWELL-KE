@@ -1,5 +1,5 @@
 import { prisma } from '@/lib/db';
-import { queryPesapalPayment } from '@/lib/pesapal';
+import { getPaymentStatus } from '@/lib/pesapal';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(req: NextRequest) {
@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
     }
 
     // Query payment status from PesaPal
-    const paymentStatus = await queryPesapalPayment(pesapalReference);
+    const paymentStatus = await getPaymentStatus(pesapalReference);
 
     if (!paymentStatus) {
       return NextResponse.json(

@@ -2,7 +2,6 @@
 
 import React, { useState } from 'react';
 import Link from 'next/link';
-// `router` reserved for future manual-role-redirect
 import { motion, AnimatePresence } from 'framer-motion';
 import { SignUp } from '@clerk/nextjs';
 import { LuxuryCity3D } from '@/components/LuxuryCity3D';
@@ -11,15 +10,26 @@ export default function SignupPage() {
   const [role, setRole] = useState<'tenant' | 'landlord' | null>(null);
 
   const roles: { key: 'tenant' | 'landlord'; title: string; desc: string; emoji: string; color: string }[] = [
-    { key: 'tenant',      title: 'Tenant',     desc: 'Find verified properties across Kenya',   emoji: '🏠', color: 'blue' },
-    { key: 'landlord',    title: 'Landlord',   desc: 'List properties and reach thousands',   emoji: '🏢', color: 'cyan' },
+    {
+      key: 'tenant',
+      title: 'Tenant',
+      desc: 'Find verified properties across Kenya',
+      emoji: '🏠',
+      color: 'blue',
+    },
+    {
+      key: 'landlord',
+      title: 'Landlord',
+      desc: 'List properties and reach thousands',
+      emoji: '🏢',
+      color: 'cyan',
+    },
   ];
 
   return (
     <main className="min-h-screen flex items-stretch">
       {/* ─ Left: form card ─ */}
       <div className="flex-1 flex items-center justify-center px-6 py-14">
-
         <AnimatePresence mode="wait">
           {/* ── STEP 1: Role selection ── */}
           {!role && (
@@ -32,9 +42,11 @@ export default function SignupPage() {
               className="w-full max-w-[400px]"
             >
               <Link href="/" className="inline-block mb-8">
-                <div className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-lg
+                <div
+                  className="w-11 h-11 rounded-xl flex items-center justify-center text-white font-bold text-lg
                                 bg-gradient-to-br from-cyan-400 to-blue-600
-                                shadow-[0_0_22px_-4px_rgba(34,211,238,0.55)]">
+                                shadow-[0_0_22px_-4px_rgba(34,211,238,0.55)]"
+                >
                   D
                 </div>
               </Link>
@@ -42,9 +54,7 @@ export default function SignupPage() {
               <h1 className="font-serif font-black text-3xl text-white tracking-tight mb-2">
                 How will you use Dwell KE?
               </h1>
-              <p className="text-gray-400 text-sm mb-10">
-                Choose your role — you can update it later.
-              </p>
+              <p className="text-gray-400 text-sm mb-10">Choose your role — you can update it later.</p>
 
               <div className="space-y-4">
                 {roles.map((r) => (
@@ -64,9 +74,7 @@ export default function SignupPage() {
                     <h3 className="text-lg font-bold text-white group-hover:text-cyan-200 transition-colors">
                       {r.title}
                     </h3>
-                    <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors mt-1">
-                      {r.desc}
-                    </p>
+                    <p className="text-sm text-gray-500 group-hover:text-gray-400 transition-colors mt-1">{r.desc}</p>
                   </motion.button>
                 ))}
               </div>
@@ -101,14 +109,12 @@ export default function SignupPage() {
                 ← Back to role selection
               </motion.button>
 
-              <h1 className="font-serif font-black text-3xl text-white tracking-tight mb-2">
-                Create your account
-              </h1>
+              <h1 className="font-serif font-black text-3xl text-white tracking-tight mb-2">Create your account</h1>
               <p className="text-gray-400 text-sm mb-8">
                 Signing up as <span className="text-cyan-300 font-semibold">{role}</span>
               </p>
 
-              {/* ─ Clerk SignUp ─ */}
+              {/* Clerk SignUp */}
               <SignUp
                 appearance={{
                   elements: {
@@ -135,6 +141,7 @@ export default function SignupPage() {
                     showFooter: false,
                   },
                 }}
+                // We rely on /auth/verify for redirect.
               />
             </motion.div>
           )}
@@ -150,14 +157,11 @@ export default function SignupPage() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.8, duration: 1 }}
         >
-          <p className="text-cyan-300/70 text-[10px] uppercase tracking-[0.4em] font-mono leading-relaxed">
-            Dwell KE
-          </p>
-          <p className="text-white/50 text-[9px] uppercase tracking-[0.25em] font-mono mt-1">
-            Smart Property Kenya
-          </p>
+          <p className="text-cyan-300/70 text-[10px] uppercase tracking-[0.4em] font-mono leading-relaxed">Dwell KE</p>
+          <p className="text-white/50 text-[9px] uppercase tracking-[0.25em] font-mono mt-1">Smart Property Kenya</p>
         </motion.div>
       </div>
     </main>
   );
 }
+

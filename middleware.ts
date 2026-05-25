@@ -5,11 +5,23 @@ const isProtectedRoute = createRouteMatcher([
   '/properties/(.*)/:edit',
 ]);
 
+// Auth routes that should NOT be protected
+const isAuthRoute = createRouteMatcher([
+  '/auth/signup(.*)',
+  '/auth/login(.*)',
+  '/auth/verify(.*)',
+]);
+
 const isAdminRoute = createRouteMatcher([
   '/admin(.*)',
 ]);
 
 export default clerkMiddleware(async (auth, req) => {
+  // Skip auth routes
+  if (isAuthRoute(req)) {
+    return;
+  }
+
   if (isProtectedRoute(req)) {
     await auth.protect();
   }

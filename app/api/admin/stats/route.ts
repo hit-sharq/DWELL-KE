@@ -5,7 +5,7 @@ import { isAdminUser } from '@/lib/admin';
 
 /** GET /api/admin/stats
  *  Admin-only. Returns aggregated platform statistics plus
- *  recent users and recent bookings for the dashboard.
+ *  recent users, recent bookings, and recent properties for the dashboard.
  */
 export async function GET(req: NextRequest) {
   try {
@@ -60,6 +60,15 @@ export async function GET(req: NextRequest) {
       include: {
         tenant: { select: { firstName: true, lastName: true } },
         property: { select: { title: true } },
+      },
+    });
+
+    // ── Recent properties ──
+    const recentProperties = await prisma.property.findMany({
+      take: 5,
+      orderBy: { createdAt: 'desc' },
+      include: {
+        landlord: { select: { firstName: true, lastName: true } },
       },
     });
 
@@ -120,6 +129,14 @@ export async function GET(req: NextRequest) {
         property: b.property.title,
         amount: `KES ${b.totalPrice.toLocaleString()}`,
         status: b.status,
+      })),
+      recentProperties: recentProperties.map((p) => ({
+        id: p.id,
+        title: p.title,
+        landlord: {
+          firstName: p.landlord?.firstName ?? null,
+          lastName: p.landlord?.lastName ?? null,
+        },
       })),
       monthlyBookings: monthlyBookings.map((m) => ({
         month: new Date(m.checkInDate).toLocaleDateString('en-US', { month: 'short' }),

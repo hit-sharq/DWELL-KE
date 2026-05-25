@@ -1,12 +1,12 @@
 'use client';
 
-import React from 'react';
+import React, { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { staggerContainer, staggerItem } from '@/lib/animations';
 
-export default function FailedPage() {
+function FailedContent() {
   const searchParams = useSearchParams();
   const bookingId = searchParams.get('bookingId');
 
@@ -101,8 +101,16 @@ export default function FailedPage() {
               </button>
             </Link>
           </motion.div>
-        </motion.div>
-      </motion.div>
-    </main>
+</motion.div>
+       </motion.div>
+     </main>
+   );
+ }
+
+export default function FailedPage() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <FailedContent />
+    </Suspense>
   );
 }

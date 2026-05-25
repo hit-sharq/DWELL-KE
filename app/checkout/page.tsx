@@ -1,15 +1,17 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { staggerContainer, staggerItem } from '@/lib/animations';
 import { PremiumButton } from '@/components/PremiumButton';
 
-export default function CheckoutPage() {
+function CheckoutContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { userId, isLoaded } = useAuth();
 
   const bookingId = searchParams.get('bookingId');
   const totalPrice = searchParams.get('totalPrice');
@@ -250,28 +252,36 @@ export default function CheckoutPage() {
                     </div>
                   </div>
 
-                  <PremiumButton
-                    variant="solid"
-                    size="lg"
-                    onClick={handlePayment}
-                    disabled={isProcessing}
-                    className="w-full"
-                  >
-                    {isProcessing
-                      ? 'Processing...'
-                      : 'Pay with PesaPal'}
-                  </PremiumButton>
+<PremiumButton
+                     variant="solid"
+                     size="lg"
+                     onClick={handlePayment}
+                     disabled={isProcessing}
+                     className="w-full"
+                   >
+                     {isProcessing
+                       ? 'Processing...'
+                       : 'Pay with PesaPal'}
+                   </PremiumButton>
 
-                  <p className="text-xs text-gray-500 text-center">
-                    By proceeding, you agree to our booking terms and conditions.
-                    Your payment is secure and processed by PesaPal.
-                  </p>
-                </>
-              )}
-            </div>
-          </motion.div>
-        </div>
-      </motion.div>
-    </main>
+                   <p className="text-xs text-gray-500 text-center">
+                     By proceeding, you agree to our booking terms and conditions.
+                     Your payment is secure and processed by PesaPal.
+                   </p>
+                 </>
+               )}
+             </div>
+           </motion.div>
+         </div>
+       </motion.div>
+     </main>
+   );
+ }
+
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="text-white text-xl">Loading...</div></div>}>
+      <CheckoutContent />
+    </Suspense>
   );
 }

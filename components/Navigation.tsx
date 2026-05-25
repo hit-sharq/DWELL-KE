@@ -11,12 +11,13 @@ import { isAdminUser } from '@/lib/admin';
 /* ─────────────────────────────────────
    NAVIGATION — Floating Luxury Glass Bar
    Cinematic glass morphism, never cheap
-───────────────────────────────────── */
+ ───────────────────────────────────── */
 
 const navSpring = { damping: 18, stiffness: 260 };
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
+  const [userRole, setUserRole] = useState<'tenant' | 'landlord' | null>(null);
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
   const adminStatus = user ? isAdminUser(user.id) : false;
@@ -34,7 +35,28 @@ export function Navigation() {
     };
   }, [mx]);
 
-  // Subtle colour shift from cyan → blue
+  useEffect(() => {
+    if (!isLoaded || !user) {
+      setUserRole(null);
+      return;
+    }
+
+    const fetchRole = async () => {
+      try {
+        const res = await fetch('/api/users');
+        if (res.ok) {
+          const data = await res.json();
+          setUserRole(data.role);
+        }
+      } catch {
+        setUserRole('tenant');
+      }
+    };
+    fetchRole();
+  }, [isLoaded, user]);
+
+  const isLandlord = userRole === 'landlord';
+
   const accentH = useTransform(mx, [0, 1], [185, 220]);
   const accent   = useTransform(
     accentH,
@@ -54,7 +76,6 @@ export function Navigation() {
       transition={{ type: 'spring', damping: 22, stiffness: 130, delay: 0.1 }}
       className="fixed top-0 left-0 right-0 z-[100]"
     >
-      {/* ─ Frost substrate (always rendered to avoid re-calc) ─ */}
       <div
         className="absolute inset-0 -z-10 rounded-b-2xl transition-all duration-500"
         style={{
@@ -72,7 +93,6 @@ export function Navigation() {
         }}
       />
 
-      {/* ─ Accent highlight orb ─ */}
       <motion.div
         className="pointer-events-none absolute inset-x-0 -top-[1px] h-px"
         style={{
@@ -85,11 +105,9 @@ export function Navigation() {
         }}
       />
 
-      {/* ─ Nav content ─ */}
       <div className="max-w-7xl mx-auto px-6 lg:px-10 py-3.5">
         <div className="flex items-center justify-between">
 
-          {/* Logo */}
           <Link href="/" className="group flex items-center gap-2.5 no-underline">
             <motion.div
               whileHover={{ scale: 1.08 }}
@@ -106,7 +124,6 @@ export function Navigation() {
             </span>
           </Link>
 
-          {/* Desktop links */}
           <div className="hidden md:flex items-center gap-10">
             {NAV_LINKS.map((link) => (
               <Link
@@ -130,7 +147,6 @@ export function Navigation() {
             ))}
           </div>
 
-          {/* Auth actions */}
           <div className="flex items-center gap-2.5">
             {isLoaded && user ? (
               <>
@@ -141,20 +157,11 @@ export function Navigation() {
                     </PremiumButton>
                   </Link>
                 )}
-                {/* Role-based dashboard link */}
-                {(() => {
-                  const role = (user as any)?.publicMetadata?.role as string | undefined;
-                  const dashboardHref = role === 'landlord' ? '/dashboard/landlord'
-                    : (role === 'admin'      ? '/dashboard/admin'
-                    : '/dashboard/tenant');
-                  return (
-                    <Link href={dashboardHref}>
-                      <PremiumButton variant="ghost" size="sm">
-                        Dashboard
-                      </PremiumButton>
-                    </Link>
-                  );
-                })()}
+                <Link href={isLandlord ? '/dashboard/landlord' : '/dashboard/tenant'}>
+                  <PremiumButton variant="ghost" size="sm">
+                    Dashboard
+                  </PremiumButton>
+                </Link>
                 <button
                   onClick={() => signOut()}
                   className="

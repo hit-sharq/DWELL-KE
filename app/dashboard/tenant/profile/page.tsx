@@ -17,6 +17,7 @@ interface UserProfile {
   phoneNumber?: string;
   role: string;
   isVerified: boolean;
+  createdAt: string;
   _count: {
     properties: number;
     bookings: number;
@@ -28,6 +29,7 @@ export default function TenantProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -64,6 +66,30 @@ export default function TenantProfilePage() {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleRoleChange = async () => {
+    if (!profile) return;
+    const newRole = profile.role === 'tenant' ? 'landlord' : 'tenant';
+    setIsUpdatingRole(true);
+    try {
+      const response = await fetch('/api/users', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (!response.ok) throw new Error('Failed to update role');
+      setSuccess(`Role updated to ${newRole}`);
+      fetchProfile();
+      // Redirect to appropriate dashboard after role change
+      setTimeout(() => {
+        window.location.href = `/dashboard/${newRole}`;
+      }, 1000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to update role');
+    } finally {
+      setIsUpdatingRole(false);
+    }
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -146,21 +172,56 @@ export default function TenantProfilePage() {
                   </div>
                 </div>
 
-                {/* Stats */}
-                <div className="grid grid-cols-3 gap-4 text-center py-4 border-y border-slate-700">
-                  <div>
-                    <p className="text-2xl font-bold text-white">{profile._count.properties}</p>
-                    <p className="text-gray-400 text-sm">Properties</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">{profile._count.bookings}</p>
-                    <p className="text-gray-400 text-sm">Bookings</p>
-                  </div>
-                  <div>
-                    <p className="text-2xl font-bold text-white">{profile._count.reviews}</p>
-                    <p className="text-gray-400 text-sm">Reviews</p>
-                  </div>
-                </div>
+{/* Stats */}
+                 <div className="grid grid-cols-3 gap-4 text-center py-4 border-y border-slate-700">
+                   <div>
+                     <p className="text-2xl font-bold text-white">{profile._count.properties}</p>
+                     <p className="text-gray-400 text-sm">Properties</p>
+                   </div>
+                   <div>
+                     <p className="text-2xl font-bold text-white">{profile._count.bookings}</p>
+                     <p className="text-gray-400 text-sm">Bookings</p>
+                   </div>
+                   <div>
+                     <p className="text-2xl font-bold text-white">{profile._count.reviews}</p>
+                     <p className="text-gray-400 text-sm">Reviews</p>
+                   </div>
+                 </div>
+
+                 {/* Role Switcher */}
+                 <div className="border-t border-slate-700 pt-6">
+                   <label className="block text-sm font-medium text-gray-300 mb-3">
+                     Account Type
+                   </label>
+                   <div className="flex items-center gap-3">
+                     <span className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                       profile.role === 'tenant' 
+                         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50' 
+                         : 'bg-slate-800 text-gray-400 hover:bg-slate-700 cursor-pointer'
+                     }`}>
+                       Tenant
+                     </span>
+                     <button
+                       onClick={handleRoleChange}
+                       disabled={isUpdatingRole}
+                       className="w-12 h-6 rounded-full bg-slate-700 relative transition-colors disabled:opacity-50"
+                     >
+                       <div className={`w-5 h-5 rounded-full bg-cyan-400 absolute top-0.5 transition-transform ${
+                         profile.role === 'landlord' ? 'translate-x-6' : 'translate-x-0.5'
+                       }`} />
+                     </button>
+                     <span className={`px-4 py-2 rounded-lg text-sm font-medium ${
+                       profile.role === 'landlord' 
+                         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50' 
+                         : 'bg-slate-800 text-gray-400 hover:bg-slate-700 cursor-pointer'
+                     }`}>
+                       Landlord
+                     </span>
+                   </div>
+                   <p className="text-gray-500 text-xs mt-2">
+                     Switch between tenant and landlord modes. You'll be redirected after changing.
+                   </p>
+                 </div>
 
                 {/* Form Fields */}
                 <div className="grid md:grid-cols-2 gap-6">

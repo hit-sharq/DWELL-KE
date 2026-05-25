@@ -1,85 +1,101 @@
-import { prisma } from '@/lib/db';
-import { auth } from '@clerk/nextjs/server';
-import Image from 'next/image';
-import { redirect } from 'next/navigation';
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
 import Link from 'next/link';
+import Image from 'next/image';
 import { DashboardNav } from '@/components/DashboardNav';
 import { StatsCard } from '@/components/StatsCard';
 import { GlassmorphicCard } from '@/components/GlassmorphicCard';
 import { PremiumButton } from '@/components/PremiumButton';
 import { Footer } from '@/components/Footer';
+import { useAuth } from '@clerk/nextjs';
 
-export default async function LandlordDashboardPage() {
-  const { userId } = await auth();
-  if (!userId) redirect('/auth/login');
+interface LandlordDashboardData {
+  activeProperties: number;
+  confirmedBookings: number;
+  totalRevenue: number;
+  occupancyPct: number;
+  pendingInquiries: number;
+  recentProperties: Array<{
+    id: string;
+    title: string;
+    location: string;
+    price: number;
+    status: string;
+    verified: boolean;
+    images: string[];
+    _count: { bookings: number; reviews: number };
+  }>;
+  recentBookings: Array<{
+    id: string;
+    status: string;
+    totalPrice: number;
+    property: { title: string };
+    tenant: { firstName: string; lastName: string };
+  }>;
+  monthlyData: Array<{ month: string; revenue: number }>;
+}
 
-  const dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
-  if (!dbUser || dbUser.role !== 'landlord') redirect('/dashboard/tenant');
+export default function LandlordDashboardPage() {
+  const [data, setData] = useState<LandlordDashboardData>({
+    activeProperties: 0,
+    confirmedBookings: 0,
+    totalRevenue: 0,
+    occupancyPct: 0,
+    pendingInquiries: 0,
+    recentProperties: [],
+    recentBookings: [],
+    monthlyData: [],
+  });
+  const { userId, isLoaded } = useAuth();
 
-  // ── Aggregated metrics ──
-  const [
-    activeProperties,
-    confirmedBookings,
-    totalMonthlyRevenue,
-    occupancyPct,
-    pendingInquiriesCount,
-    recentProperties,
-    recentBookings,
-    monthlyRevenue,
-  ] = await Promise.all([
-    prisma.property.count({ where: { landlordId: dbUser.id } }),
-    prisma.booking.count({
-      where: {
-        property:  { landlordId: dbUser.id },
-        status:    { in: ['confirmed', 'completed'] },
-      },
-    }),
-    (async () => {
-      const props = await prisma.property.findMany({
-        where: { landlordId: dbUser.id, bookings: { some: { status: { in: ['confirmed', 'completed'] } } } },
-        include: { bookings: { where: { status: { in: ['confirmed', 'completed'] } } } },
-      });
-      return props.reduce((sum, p) => sum + p.bookings.reduce((s, b) => s + b.totalPrice, 0), 0);
-    })(),
-    (async () => { /* occupancy % */
-      const props = await prisma.property.findMany({ where: { landlordId: dbUser.id } });
-      if (props.length === 0) return 0;
-      const occupied = props.filter((p) => p.status === 'occupied').length;
-      return Math.round((occupied / props.length) * 100);
-    })(),
-    prisma.message.count({
-      where: {
-        property: { landlordId: dbUser.id },
-        isRead:   false,
-      },
-    }),
-    prisma.property.findMany({
-      where:  { landlordId: dbUser.id },
-      take:   4,
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id:         true,
-        title:      true,
-        location:   true,
-        price:      true,
-        status:     true,
-        verified:   true,
-        images:     true,
-        _count:     { select: { bookings: true, reviews: true } },
-      },
-    }),
-    prisma.booking.findMany({
-      where:  { property: { landlordId: dbUser.id } },
-      take:   5,
-      orderBy: { createdAt: 'desc' },
-      include: { tenant: { select: { firstName: true, lastName: true } }, property: { select: { title: true } } },
-    }),
-    // last 6 months revenue
-    prisma.booking.findMany({
-      where: { property: { landlordId: dbUser.id }, status: { in: ['confirmed', 'completed'] } },
-      select: { totalPrice: true, checkInDate: true },
-    }),
-  ]);
+  useEffect(() => {
+    if (!isLoaded) return;
+    if (!userId) {
+      window.location.href = '/auth/login';
+      return;
+    }
+
+    const checkRoleAndFetchData = async () => {
+      let fetchedRole: string | null = null;
+
+      try {
+        const res = await fetch('/api/users');
+        if (res.ok) {
+          const userData = await res.json();
+          fetchedRole = userData.role || null;
+
+          // Redirect non-landlords away: tenants → tenant dashboard,
+          // admins → admin dashboard.
+          if (fetchedRole === 'tenant') {
+            window.location.href = '/dashboard/tenant';
+            return;
+          }
+          if (fetchedRole === 'admin') {
+            window.location.href = '/dashboard/admin';
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('Failed to check role:', error);
+      }
+
+      const fetchData = async () => {
+        try {
+          const response = await fetch('/api/dashboard/landlord/stats');
+          if (response.ok) {
+            const result = await response.json();
+            setData(result);
+          }
+        } catch (error) {
+          console.error('Failed to fetch landlord stats:', error);
+        }
+      };
+      fetchData();
+    };
+    checkRoleAndFetchData();
+  }, [isLoaded, userId]);
 
   return (
     <main className="min-h-screen bg-background">
@@ -87,167 +103,190 @@ export default async function LandlordDashboardPage() {
 
       <div className="py-12 px-6">
         <div className="max-w-7xl mx-auto">
-
-          {/* ── Header ── */}
-          <div className="mb-12">
+          {/* Header */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="mb-12"
+          >
             <h1 className="text-4xl font-bold text-white mb-2">Property Management Dashboard</h1>
             <p className="text-gray-400">Live overview of your properties, bookings, and earnings</p>
-          </div>
+          </motion.div>
 
-          {/* ── Stats Grid ── */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-            <StatsCard label="Active Properties" value={activeProperties} icon="🏢" />
+          {/* Stats Grid */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12"
+          >
+            <StatsCard label="Active Properties" value={data.activeProperties} icon="🏢" />
             <StatsCard
               label="Monthly Earnings"
-              value={`KES ${(totalMonthlyRevenue / 1_000_000).toFixed(1)}M`}
+              value={`KES ${(data.totalRevenue / 1_000_000).toFixed(1)}M`}
               icon="💰"
               trend={{ value: 15, direction: 'up' }}
             />
-            <StatsCard label="Occupancy Rate" value={`${occupancyPct}%`} icon="📊" />
-            <StatsCard label="Pending Inquiries" value={pendingInquiriesCount} icon="📝" />
-          </div>
+            <StatsCard label="Occupancy Rate" value={`${data.occupancyPct}%`} icon="📊" />
+            <StatsCard label="Pending Inquiries" value={data.pendingInquiries} icon="📝" />
+          </motion.div>
 
-          {/* ── Revenue + Performance ── */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
-            {/* Revenue Overview */}
-            <GlassmorphicCard className="lg:col-span-2">
+          {/* Revenue Overview */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="mb-12"
+          >
+            <GlassmorphicCard>
               <h2 className="text-2xl font-bold text-white mb-6">Revenue Overview</h2>
-              {monthlyRevenue.length === 0 ? (
-                <div className="h-64 flex items-center justify-center text-gray-500">
-                  No revenue data yet. Listings with confirmed bookings will appear here.
-                </div>
-              ) : (
-                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  {Array.from(new Set(monthlyRevenue.map((b) => new Date(b.checkInDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }))))
-                    .slice(-6)
-                    .map((monthLabel) => {
-                      const monthTotal = monthlyRevenue
-                        .filter((b) => new Date(b.checkInDate).toLocaleDateString('en-US', { month: 'long', year: 'numeric' }) === monthLabel)
-                        .reduce((s, b) => s + b.totalPrice, 0);
-                      return (
-                        <div key={monthLabel} className="p-5 rounded-xl bg-slate-900/50 border border-white/[0.04]">
-                          <p className="text-[10px] uppercase tracking-[0.2em] font-mono text-gray-500 mb-2">{monthLabel}</p>
-                          <p className="text-xl font-bold text-cyan-300">
-                            KES {(monthTotal / 1_000_000).toFixed(2)}M
-                          </p>
-                        </div>
-                      );
-                    })}
-                </div>
-              )}
-            </GlassmorphicCard>
-
-            {/* Performance */}
-            <GlassmorphicCard className="h-full">
-              <h3 className="text-lg font-bold text-white mb-6">Performance</h3>
-              <div className="space-y-5">
-                <div>
-                  <p className="text-gray-500 text-sm mb-1.5">Active Listings</p>
-                  <p className="text-2xl font-bold text-cyan-400">{activeProperties}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm mb-1.5">Confirmed Bookings</p>
-                  <p className="text-2xl font-bold text-emerald-400">{confirmedBookings}</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm mb-1.5">Occupancy</p>
-                  <p className="text-2xl font-bold text-blue-400">{occupancyPct}%</p>
-                </div>
-                <div>
-                  <p className="text-gray-500 text-sm mb-1.5">Unread Inquiries</p>
-                  <p className="text-2xl font-bold text-violet-400">{pendingInquiriesCount}</p>
-                </div>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {data.monthlyData.length > 0 ? (
+                  data.monthlyData.map((item, idx) => (
+                    <motion.div
+                      key={item.month}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: idx * 0.1 }}
+                      className="p-5 rounded-xl bg-slate-900/50 border border-white/[0.04] text-center"
+                    >
+                      <p className="text-[10px] uppercase tracking-[0.2em] font-mono text-gray-500 mb-2">{item.month}</p>
+                      <p className="text-xl font-bold text-cyan-300">
+                        KES {(item.revenue / 1_000_000).toFixed(2)}M
+                      </p>
+                    </motion.div>
+                  ))
+                ) : (
+                  <div className="col-span-3 text-center py-12 text-gray-500">
+                    No revenue data yet. Listings with confirmed bookings will appear here.
+                  </div>
+                )}
               </div>
             </GlassmorphicCard>
-          </div>
+          </motion.div>
 
-          {/* ── Active Properties ── */}
-          <div className="mb-12">
-            <h2 className="text-2xl font-bold text-white mb-6">Active Properties</h2>
-            <GlassmorphicCard>
-              {recentProperties.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-500 mb-4">You haven&apos;t listed any properties yet.</p>
-                  <Link href="/dashboard/landlord/create-property">
-                    <PremiumButton variant="solid" size="sm">
-                      Create Your First Listing
-                    </PremiumButton>
-                  </Link>
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {recentProperties.map((prop) => (
-                    <div
-                      key={prop.id}
-                      className="flex items-start justify-between gap-4 p-5 rounded-xl bg-slate-900/40 border border-white/[0.04] hover:border-cyan-400/15 transition-all"
-                    >
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-1">
-                          <p className="font-bold text-white">{prop.title}</p>
-                          {prop.verified ? (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-emerald-500/15 text-emerald-400">✓ Verified</span>
+          {/* Properties and Bookings Side by Side */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {/* Active Properties */}
+            <motion.div
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white">Active Properties</h2>
+                <Link href="/dashboard/landlord/properties">
+                  <PremiumButton variant="outline" size="sm">View All</PremiumButton>
+                </Link>
+              </div>
+              <GlassmorphicCard>
+                {data.recentProperties.length === 0 ? (
+                  <div className="text-center py-12">
+                    <p className="text-gray-500 mb-4">You haven't listed any properties yet.</p>
+                    <Link href="/dashboard/landlord/create-property">
+                      <PremiumButton variant="solid" size="sm">Create Your First Listing</PremiumButton>
+                    </Link>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {data.recentProperties.slice(0, 3).map((prop) => (
+                      <motion.div
+                        key={prop.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center gap-4 p-4 rounded-xl bg-slate-900/40 border border-white/[0.04]"
+                      >
+                        <div className="relative w-16 h-16 rounded-lg overflow-hidden">
+                          {prop.images?.[0] ? (
+                            <Image src={prop.images[0]} alt={prop.title} fill className="object-cover" />
                           ) : (
-                            <span className="px-2 py-0.5 rounded-full text-[10px] font-medium bg-yellow-500/15 text-yellow-400">Pending</span>
+                            <div className="w-full h-full bg-slate-800 flex items-center justify-center text-gray-600">
+                              <span className="text-xs">No Image</span>
+                            </div>
                           )}
                         </div>
-                        <p className="text-sm text-gray-400">
-                          {prop.location} · {prop.bedrooms} bed · {prop.bathrooms} bath
-                        </p>
-                        <p className="text-xs text-gray-500 mt-2">
-                          {prop._count.bookings} booking{prop._count.bookings !== 1 ? 's' : ''} · {prop._count.reviews} review{prop._count.reviews !== 1 ? 's' : ''}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-6 shrink-0">
-                        <div className="text-right">
-                          <p className="font-bold text-cyan-400">KES {prop.price.toLocaleString()}</p>
-                          <p className="text-sm text-gray-500">/month</p>
+                        <div className="flex-1">
+                          <p className="font-bold text-white">{prop.title}</p>
+                          <p className="text-sm text-gray-400">{prop.location}</p>
                         </div>
-                        <Link href={`/properties/${prop.id}`}>
-                          <PremiumButton variant="outline" size="sm">
-                            Manage
-                          </PremiumButton>
-                        </Link>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </GlassmorphicCard>
+                        <p className="text-cyan-400 font-bold">KES {prop.price.toLocaleString()}</p>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </GlassmorphicCard>
+            </motion.div>
+
+            {/* Recent Bookings */}
+            <motion.div
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.3 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-white">Recent Bookings</h2>
+                <Link href="/dashboard/landlord/bookings">
+                  <PremiumButton variant="outline" size="sm">View All</PremiumButton>
+                </Link>
+              </div>
+              <GlassmorphicCard>
+                {data.recentBookings.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500">No bookings yet.</div>
+                ) : (
+                  <div className="space-y-4">
+                    {data.recentBookings.slice(0, 3).map((booking) => (
+                      <motion.div
+                        key={booking.id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        className="flex items-center justify-between p-4 rounded-xl bg-blue-500/5 border border-blue-500/10"
+                      >
+                        <div>
+                          <p className="font-bold text-white">{booking.property.title}</p>
+                          <p className="text-sm text-gray-400">
+                            {booking.tenant.firstName} {booking.tenant.lastName}
+                          </p>
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                          booking.status === 'confirmed' ? 'bg-green-500/15 text-green-400' :
+                          booking.status === 'pending' ? 'bg-yellow-500/15 text-yellow-400' :
+                          'bg-blue-500/15 text-blue-400'
+                        }`}>
+                          {booking.status}
+                        </span>
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
+              </GlassmorphicCard>
+            </motion.div>
           </div>
 
-          {/* ── Recent Bookings ── */}
-          <div>
-            <h2 className="text-2xl font-bold text-white mb-6">Recent Bookings</h2>
-            <GlassmorphicCard>
-              {recentBookings.length === 0 ? (
-                <div className="text-center py-12">
-                  <p className="text-gray-500">No bookings yet.</p>
-                </div>
-              ) : (
-                <div className="space-y-3">
-                  {recentBookings.map((b) => (
-                    <div key={b.id} className="flex items-center justify-between p-4 rounded-xl bg-blue-500/5 border border-blue-500/10">
-                      <div>
-                        <p className="font-bold text-white">{b.property.title}</p>
-                        <p className="text-sm text-gray-400">
-                          {b.tenant.firstName} {b.tenant.lastName} · KES {b.totalPrice.toLocaleString()}
-                        </p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-xs font-medium ${
-                        b.status === 'confirmed'    ? 'bg-green-500/15 text-green-400' :
-                        b.status === 'pending'      ? 'bg-yellow-500/15 text-yellow-400' :
-                        b.status === 'completed'    ? 'bg-blue-500/15 text-blue-400' :
-                                                        'bg-red-500/15 text-red-400'
-                      }`}>
-                        {b.status.charAt(0).toUpperCase() + b.status.slice(1)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </GlassmorphicCard>
-          </div>
-
+          {/* Quick Actions */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+          >
+            <h2 className="text-2xl font-bold text-white mb-6">Quick Actions</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Link href="/dashboard/landlord/create-property">
+                <PremiumButton variant="solid" size="lg" className="w-full">
+                  Add New Property
+                </PremiumButton>
+              </Link>
+              <Link href="/dashboard/landlord/earnings">
+                <PremiumButton variant="outline" size="lg" className="w-full">
+                  View Earnings
+                </PremiumButton>
+              </Link>
+              <Link href="/dashboard/landlord/analytics">
+                <PremiumButton variant="outline" size="lg" className="w-full">
+                  Analytics
+                </PremiumButton>
+              </Link>
+            </div>
+          </motion.div>
         </div>
       </div>
 
