@@ -4,6 +4,8 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { staggerContainer, staggerItem } from '@/lib/animations';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 
 interface Property {
   id: string;
@@ -111,20 +113,33 @@ export default function MarketplacePage() {
 
   return (
     <main className="min-h-screen bg-slate-950">
+      <Navigation />
       <motion.div
         variants={staggerContainer}
         initial="initial"
         animate="animate"
         className="container mx-auto px-4 py-12"
       >
-        {/* Header */}
-        <motion.div variants={staggerItem} className="mb-12">
+        {/* Hero Header */}
+        <motion.div variants={staggerItem} className="mb-16">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="inline-flex items-center gap-2 glass-strong px-4 py-1.5 rounded-full border-cyan-400/12 shadow-lg">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400/70" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-cyan-400" />
+              </span>
+              <span className="text-[10px] uppercase tracking-[0.3em] font-mono text-cyan-200/90">
+                Premium Properties
+              </span>
+            </span>
+          </div>
           <h1 className="text-4xl md:text-5xl font-bold text-white mb-4">
             Find Your Perfect Property
           </h1>
-          <p className="text-gray-400 text-lg">
-            Browse our premium collection of properties across Kenya
+          <p className="text-gray-400 text-lg max-w-2xl">
+            Browse our premium collection of verified properties across Kenya — from Nairobi rooftops to Mombasa coastlines
           </p>
+          <div className="h-px bg-gradient-to-r from-cyan-400/80 via-blue-500/50 to-transparent mt-6 mb-8" style={{ maxWidth: 480 }} />
         </motion.div>
 
         <div className="grid lg:grid-cols-4 gap-8">
@@ -365,6 +380,7 @@ export default function MarketplacePage() {
           </motion.div>
         </div>
       </motion.div>
+      <Footer />
     </main>
   );
 }

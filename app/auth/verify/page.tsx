@@ -1,13 +1,13 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useUser } from '@clerk/nextjs';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { motion } from 'framer-motion';
 
 type Role = 'tenant' | 'landlord' | 'admin';
 
-export default function VerifyEmail() {
+function VerifyContent() {
   const { user, isLoaded } = useUser();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -93,4 +93,19 @@ export default function VerifyEmail() {
 
   // This should not be reached due to the redirect in useEffect
   return null;
+}
+
+export default function VerifyEmail() {
+  return (
+    <Suspense fallback={
+      <motion.div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-white mb-4">Verifying your email...</h2>
+          <p className="text-gray-400">We're checking your email verification status.</p>
+        </div>
+      </motion.div>
+    }>
+      <VerifyContent />
+    </Suspense>
+  );
 }

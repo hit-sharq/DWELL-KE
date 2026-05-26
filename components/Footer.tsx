@@ -13,19 +13,41 @@ import { BRAND, NAV_LINKS } from '@/lib/constants';
 const footerCols = [
   {
     title: 'Product',
-    links: ['Properties', 'Pricing', 'Landlord Portal', 'Tenant App', 'AI Tools'],
+    links: [
+      { label: 'Properties', href: '/marketplace' },
+      { label: 'Pricing', href: '/pricing' },
+      { label: 'Landlord Portal', href: '/dashboard/landlord' },
+      { label: 'Tenant App', href: '/dashboard/tenant' },
+      { label: 'AI Tools', href: '/ai-tools' },
+    ],
   },
   {
     title: 'Company',
-    links: ['About Dwell KE', 'Careers', 'Press', 'Contact'],
+    links: [
+      { label: 'About Dwell KE', href: '/about' },
+      { label: 'Careers', href: '/careers' },
+      { label: 'Press', href: '/press' },
+      { label: 'Contact', href: '/contact' },
+    ],
   },
   {
     title: 'Resources',
-    links: ['Blog', 'Help Centre', 'Safety Guide', 'Property Guide'],
+    links: [
+      { label: 'Blog', href: '/blog' },
+      { label: 'News', href: '/news' },
+      { label: 'Help Centre', href: '/help' },
+      { label: 'Safety Guide', href: '/safety' },
+      { label: 'Property Guide', href: '/guide' },
+    ],
   },
   {
     title: 'Legal',
-    links: ['Privacy', 'Terms of Service', 'Cookie Policy', 'Licences'],
+    links: [
+      { label: 'Privacy', href: '/privacy' },
+      { label: 'Terms of Service', href: '/terms' },
+      { label: 'Cookie Policy', href: '/cookies' },
+      { label: 'Licences', href: '/licenses' },
+    ],
   },
 ];
 
@@ -125,22 +147,20 @@ export function Footer() {
               </div>
             </div>
 
-            {/* Link columns */}
+{/* Link columns */}
             {footerCols.map((col) => (
               <div key={col.title}>
-                <p className="text-[9px] uppercase tracking-[0.3em] font-mono mb-5
-                              text-cyan-400/40">
+                <p className="text-[9px] uppercase tracking-[0.3em] font-mono mb-5 text-cyan-400/40">
                   {col.title}
                 </p>
                 <ul className="space-y-3">
-                  {col.links.map((l) => (
-                    <li key={l}>
+                  {col.links.map((link: any) => (
+                    <li key={link.label}>
                       <Link
-                        href="#"
-                        className="text-sm text-gray-500 no-underline
-                                   hover:text-gray-200 transition-colors duration-250"
+                        href={link.href}
+                        className="text-sm text-gray-500 no-underline hover:text-gray-200 transition-colors duration-250"
                       >
-                        {l}
+                        {link.label}
                       </Link>
                     </li>
                   ))}

@@ -6,6 +6,8 @@ import { useAuth } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { staggerContainer, staggerItem } from '@/lib/animations';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 import { PremiumButton } from '@/components/PremiumButton';
 
 function CheckoutContent() {
@@ -14,7 +16,6 @@ function CheckoutContent() {
   const { userId, isLoaded } = useAuth();
 
   const bookingId = searchParams.get('bookingId');
-  const totalPrice = searchParams.get('totalPrice');
 
   const [booking, setBooking] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -28,7 +29,6 @@ function CheckoutContent() {
       return;
     }
 
-    // Fetch booking details
     const fetchBooking = async () => {
       try {
         const response = await fetch(`/api/bookings`);
@@ -73,7 +73,6 @@ function CheckoutContent() {
 
       const data = await response.json();
 
-      // Redirect to PesaPal
       if (data.redirectUrl) {
         window.location.href = data.redirectUrl;
       } else {
@@ -108,6 +107,7 @@ function CheckoutContent() {
 
   return (
     <main className="min-h-screen bg-slate-950">
+      <Navigation />
       <motion.div
         variants={staggerContainer}
         initial="initial"
@@ -124,14 +124,12 @@ function CheckoutContent() {
         </motion.div>
 
         <div className="grid md:grid-cols-3 gap-8">
-          {/* Booking Summary */}
           <motion.div variants={staggerItem} className="md:col-span-2">
             <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-slate-900/40 to-slate-900/20 backdrop-blur p-8 space-y-6">
               <h1 className="text-3xl font-bold text-white">Order Summary</h1>
 
               {booking && (
                 <>
-                  {/* Property Details */}
                   <div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
                     <h3 className="text-lg font-bold text-white">
                       {booking.property.title}
@@ -161,7 +159,6 @@ function CheckoutContent() {
                     </div>
                   </div>
 
-                  {/* Booking Details */}
                   <div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 space-y-3">
                     <h3 className="font-bold text-white">Booking Details</h3>
                     <div className="space-y-2 text-sm text-gray-300">
@@ -185,36 +182,34 @@ function CheckoutContent() {
                       )}
                     </div>
                   </div>
-                </>
-              )}
 
-              {/* Payment Information */}
-              <div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
-                <h3 className="font-bold text-white">Payment Information</h3>
-                <p className="text-gray-400 text-sm">
-                  We accept payments via PesaPal. You'll be redirected to complete
-                  your payment securely.
-                </p>
-                <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/30 space-y-2">
-                  <div className="text-sm text-gray-400">Accepted Methods:</div>
-                  <div className="text-cyan-400 text-sm space-y-1">
-                    <div>✓ M-Pesa</div>
-                    <div>✓ Airtel Money</div>
-                    <div>✓ Bank Transfer</div>
-                    <div>✓ Card Payments</div>
+                  <div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
+                    <h3 className="font-bold text-white">Payment Information</h3>
+                    <p className="text-gray-400 text-sm">
+                      We accept payments via PesaPal. You'll be redirected to complete
+                      your payment securely.
+                    </p>
+                    <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/30 space-y-2">
+                      <div className="text-sm text-gray-400">Accepted Methods:</div>
+                      <div className="text-cyan-400 text-sm space-y-1">
+                        <div>✓ M-Pesa</div>
+                        <div>✓ Airtel Money</div>
+                        <div>✓ Bank Transfer</div>
+                        <div>✓ Card Payments</div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              </div>
 
-              {error && (
-                <div className="p-4 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400">
-                  {error}
-                </div>
+                  {error && (
+                    <div className="p-4 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400">
+                      {error}
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </motion.div>
 
-          {/* Price Breakdown */}
           <motion.div variants={staggerItem}>
             <div className="sticky top-8 rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-slate-900/40 to-slate-900/20 backdrop-blur p-8 space-y-6">
               <h3 className="text-xl font-bold text-white">Price Breakdown</h3>
@@ -252,31 +247,32 @@ function CheckoutContent() {
                     </div>
                   </div>
 
-<PremiumButton
-                     variant="solid"
-                     size="lg"
-                     onClick={handlePayment}
-                     disabled={isProcessing}
-                     className="w-full"
-                   >
-                     {isProcessing
-                       ? 'Processing...'
-                       : 'Pay with PesaPal'}
-                   </PremiumButton>
+                  <PremiumButton
+                    variant="solid"
+                    size="lg"
+                    onClick={handlePayment}
+                    disabled={isProcessing}
+                    className="w-full"
+                  >
+                    {isProcessing
+                      ? 'Processing...'
+                      : 'Pay with PesaPal'}
+                  </PremiumButton>
 
-                   <p className="text-xs text-gray-500 text-center">
-                     By proceeding, you agree to our booking terms and conditions.
-                     Your payment is secure and processed by PesaPal.
-                   </p>
-                 </>
-               )}
-             </div>
-           </motion.div>
-         </div>
-       </motion.div>
-     </main>
-   );
- }
+                  <p className="text-xs text-gray-500 text-center">
+                    By proceeding, you agree to our booking terms and conditions.
+                    Your payment is secure and processed by PesaPal.
+                  </p>
+                </>
+              )}
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
+      <Footer />
+    </main>
+  );
+}
 
 export default function CheckoutPage() {
   return (

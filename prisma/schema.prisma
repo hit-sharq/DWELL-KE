@@ -169,3 +169,16 @@ model ActivityLog {
 
   @@map("activity_logs")
 }
+
+// Site Page model (for CMS content)
+model SitePage {
+  id          String    @id @default(cuid())
+  slug        String    @unique
+  title       String
+  content     String?   @db.Text
+  isPublished Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@map("site_pages")
+}

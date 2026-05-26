@@ -5,6 +5,8 @@ import { useParams, useRouter } from 'next/navigation';
 import { motion } from 'framer-motion';
 import { BookingForm } from '@/components/BookingForm';
 import { staggerContainer, staggerItem } from '@/lib/animations';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 import Link from 'next/link';
 
 interface Property {
@@ -90,6 +92,7 @@ export default function PropertyDetailPage() {
 
   return (
     <main className="min-h-screen bg-slate-950">
+      <Navigation />
       <motion.div
         variants={staggerContainer}
         initial="initial"
@@ -283,6 +286,7 @@ export default function PropertyDetailPage() {
           </motion.div>
         </div>
       </motion.div>
+      <Footer />
     </main>
   );
 }

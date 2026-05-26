@@ -5,6 +5,8 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { staggerContainer, staggerItem } from '@/lib/animations';
+import { Navigation } from '@/components/Navigation';
+import { Footer } from '@/components/Footer';
 
 function FailedContent() {
   const searchParams = useSearchParams();
@@ -12,17 +14,17 @@ function FailedContent() {
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
+      <Navigation />
       <motion.div
         variants={staggerContainer}
         initial="initial"
         animate="animate"
-        className="container mx-auto px-4 py-12 flex items-center justify-center min-h-screen"
+        className="container mx-auto px-4 py-12 flex items-center justify-center min-h-screen pt-24"
       >
         <motion.div
           variants={staggerItem}
           className="text-center space-y-8 max-w-md"
         >
-          {/* Failed Icon */}
           <motion.div
             variants={staggerItem}
             className="flex justify-center"
@@ -46,7 +48,6 @@ function FailedContent() {
             </div>
           </motion.div>
 
-          {/* Message */}
           <motion.div variants={staggerItem} className="space-y-3">
             <h1 className="text-4xl font-bold text-white">Payment Failed</h1>
             <p className="text-gray-400 text-lg">
@@ -55,7 +56,6 @@ function FailedContent() {
             </p>
           </motion.div>
 
-          {/* Error Details */}
           <motion.div
             variants={staggerItem}
             className="p-6 rounded-xl bg-red-500/10 border border-red-500/30 space-y-3 text-left"
@@ -81,7 +81,6 @@ function FailedContent() {
             </ul>
           </motion.div>
 
-          {/* Action Buttons */}
           <motion.div variants={staggerItem} className="flex flex-col gap-3">
             {bookingId && (
               <Link href={`/checkout?bookingId=${bookingId}`}>
@@ -101,15 +100,16 @@ function FailedContent() {
               </button>
             </Link>
           </motion.div>
-</motion.div>
-       </motion.div>
-     </main>
-   );
- }
+        </motion.div>
+      </motion.div>
+      <Footer />
+    </main>
+  );
+}
 
 export default function FailedPage() {
   return (
-    <Suspense fallback={<div>Loading...</div>}>
+    <Suspense fallback={<div className="min-h-screen bg-slate-950 flex items-center justify-center"><div className="text-white text-xl">Loading...</div></div>}>
       <FailedContent />
     </Suspense>
   );

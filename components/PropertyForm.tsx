@@ -209,38 +209,45 @@ export function PropertyForm() {
       {/* Image Upload */}
       <motion.div variants={staggerItem}>
         <label className="block text-sm font-bold text-white mb-2">Property Images</label>
-        <CldUploadWidget
-          uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
-          onSuccess={(result: any) => {
-            setImages([...images, result.info.secure_url]);
-          }}
-          onError={(error: any) => {
-            setError('Failed to upload image: ' + error.message);
-          }}
-        >
-          {({ open }) => (
-            <button
-              type="button"
-              onClick={() => open()}
-              className="w-full px-4 py-3 rounded-lg border border-dashed border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/5 transition-colors"
-            >
-              Click to upload images
-            </button>
-          )}
-        </CldUploadWidget>
+<CldUploadWidget
+           uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
+           cloudName={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}
+           onSuccess={(result: any) => {
+             const newUrls = result?.info?.secure_url
+               ? [result.info.secure_url]
+               : Array.isArray(result) 
+                 ? result.map((r: any) => r?.info?.secure_url).filter(Boolean)
+                 : [];
+             setImages(prev => [...prev, ...newUrls]);
+           }}
+           onError={(error: any) => {
+             setError('Failed to upload image: ' + error.message);
+           }}
+           options={{ multiple: true }}
+         >
+           {({ open }) => (
+             <button
+               type="button"
+               onClick={() => open()}
+               className="w-full px-4 py-3 rounded-lg border border-dashed border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/5 transition-colors"
+             >
+               Click to upload images
+             </button>
+           )}
+         </CldUploadWidget>
 
         {images.length > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-4">
             {images.map((img, idx) => (
               <div key={idx} className="relative">
                 <img src={img} alt={`Property ${idx}`} className="w-full h-24 object-cover rounded-lg" />
-                <button
-                  type="button"
-                  onClick={() => setImages(images.filter((_, i) => i !== idx))}
-                  className="absolute top-1 right-1 bg-red-500 text-white px-2 py-1 rounded text-xs"
-                >
-                  Remove
-                </button>
+<button
+                                   type="button"
+                                   onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))}
+                                   className="absolute top-1 right-1 bg-red-500 text-white px-2 py-1 rounded text-xs"
+                                 >
+                                   Remove
+                                 </button>
               </div>
             ))}
           </div>
