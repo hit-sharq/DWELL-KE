@@ -112,12 +112,12 @@ export default function AdminPaymentsPage() {
         </motion.div>
       )}
 
-      {/* ── Filters ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8 flex gap-3"
-      >
+{/* ── Filters ── */}
+       <motion.div
+         initial={{ opacity: 0, y: 18 }}
+         animate={{ opacity: 1, y: 0 }}
+         className="mb-8 flex gap-3 flex-nowrap overflow-x-auto pb-2"
+       >
         {(['all', 'pending', 'completed', 'failed'] as const).map((s) => (
           <button
             key={s}

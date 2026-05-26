@@ -14,6 +14,7 @@ const adminMenuItems = [
   { label: 'Payments', href: '/admin/payments', icon: '💳' },
   { label: 'Reports', href: '/admin/reports', icon: '📈' },
   { label: 'Settings', href: '/admin/settings', icon: '⚙️' },
+  { label: 'Back to System', href: '/', icon: '←' },
 ];
 
 export function AdminNav() {

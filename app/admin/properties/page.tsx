@@ -71,45 +71,52 @@ export default function AdminPropertiesPage() {
   return (
     <div className="py-10 px-8">
 
-      {/* ── Header ── */}
-      <motion.div {...scrollReveal} className="mb-10">
-        <div className="flex items-center gap-3 mb-2">
-          <span className="text-4xl font-bold leading-none">🏠</span>
-          <h1 className="
-            font-serif font-black text-white
-            text-[clamp(1.75rem,3.5vw,2.5rem)]
-            leading-[0.95] tracking-[-0.025em]
-          ">
-            Property Listings
-          </h1>
-        </div>
-        <p className="text-gray-400 font-light text-base">
-          Review, approve, and manage all property verifications — live data
-        </p>
-      </motion.div>
+       {/* ── Header ── */}
+       <motion.div {...scrollReveal} className="mb-10">
+         <div className="flex items-center gap-3 mb-2">
+           <span className="text-4xl font-bold leading-none">🏠</span>
+           <h1 className="
+             font-serif font-black text-white
+             text-[clamp(1.75rem,3.5vw,2.5rem)]
+             leading-[0.95] tracking-[-0.025em]
+           ">
+             Property Listings
+           </h1>
+         </div>
+         <p className="text-gray-400 font-light text-base">
+           Review, approve, and manage all property verifications — live data
+         </p>
+         <div className="mt-4">
+           <Link href="/admin/properties/create">
+             <PremiumButton variant="solid" size="sm">
+               Create Property
+             </PremiumButton>
+           </Link>
+         </div>
+       </motion.div>
 
-      {/* ── Filters ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8 flex gap-3"
-      >
-        {(['all', 'verified', 'pending'] as const).map((s) => (
-          <button
-            key={s}
-            onClick={() => setStatusFilter(s)}
-            className={`
-              px-5 py-2.5 rounded-xl text-[11px] uppercase font-semibold tracking-[0.15em]
-              transition-all duration-300
-              ${statusFilter === s
-                ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_24px_rgba(34,211,238,0.38)]'
-                : 'bg-slate-900/50 text-gray-400 hover:text-white border border-white/[0.07]'}
-            `}
-          >
-            {s.charAt(0).toUpperCase() + s.slice(1)}
-          </button>
-        ))}
-      </motion.div>
+{/* ── Filters ── */}
+       <motion.div
+         initial={{ opacity: 0, y: 18 }}
+         animate={{ opacity: 1, y: 0 }}
+         className="mb-8 flex gap-3 flex-nowrap overflow-x-auto pb-2"
+       >
+         {(['all', 'verified', 'pending'] as const).map((s) => (
+           <button
+             key={s}
+             onClick={() => setStatusFilter(s)}
+             className={`
+               px-5 py-2.5 rounded-xl text-[11px] uppercase font-semibold tracking-[0.15em]
+               transition-all duration-300
+               ${statusFilter === s
+                 ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-[0_0_24px_rgba(34,211,238,0.38)]'
+                 : 'bg-slate-900/50 text-gray-400 hover:text-white border border-white/[0.07]'}
+             `}
+           >
+             {s.charAt(0).toUpperCase() + s.slice(1)}
+           </button>
+         ))}
+       </motion.div>
 
       {error && !loading && (
         <GlassmorphicCard className="border-red-400/20 bg-red-500/5 mb-8">

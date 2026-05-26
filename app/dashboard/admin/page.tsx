@@ -64,7 +64,7 @@ export default function AdminDashboardPage() {
   return (
     <div className="min-h-screen bg-background">
       <AdminNav />
-      <div className="py-10 px-8">
+      <div className="ml-64 py-10 px-8">
         <div className="max-w-7xl mx-auto space-y-10">
           {/* Header */}
           <motion.div

@@ -1,14 +1,13 @@
-import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdminUser } from '@/lib/admin';
+import { requireAdmin } from '@/lib/rbac';
 
 /** GET /api/admin/properties  — list all properties (admin only) */
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    if (!isAdminUser(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const check = await requireAdmin();
+    if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
+
 
     const statusParam = req.nextUrl.searchParams.get('status') || 'all';
 

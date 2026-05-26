@@ -69,12 +69,12 @@ export default function AdminBookingsPage() {
         </p>
       </motion.div>
 
-      {/* ── Filters ── */}
-      <motion.div
-        initial={{ opacity: 0, y: 18 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mb-8 flex flex-wrap gap-3"
-      >
+{/* ── Filters ── */}
+       <motion.div
+         initial={{ opacity: 0, y: 18 }}
+         animate={{ opacity: 1, y: 0 }}
+         className="mb-8 flex flex-nowrap gap-3 overflow-x-auto pb-2"
+       >
         {(['all', 'pending', 'confirmed', 'completed', 'cancelled'] as const).map((s) => (
           <button
             key={s}

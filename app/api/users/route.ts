@@ -126,13 +126,19 @@ export async function POST(req: NextRequest) {
       where: { clerkId: user.id },
     });
 
-    if (existingUser) {
-      return NextResponse.json(existingUser, { status: 200 });
-    }
-
     const VALID_ROLES: Role[] = ['tenant', 'landlord', 'admin'];
     const rawRole = body.role || 'tenant';
     const role = VALID_ROLES.includes(rawRole as Role) ? rawRole : 'tenant';
+
+    // If the user exists, update the role (so re-signup / role switch works)
+    if (existingUser) {
+      const updated = await prisma.user.update({
+        where: { clerkId: user.id },
+        data: { role },
+      });
+
+      return NextResponse.json(updated, { status: 200 });
+    }
 
     // Create new user
     const newUser = await prisma.user.create({

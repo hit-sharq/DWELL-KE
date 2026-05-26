@@ -28,7 +28,10 @@ export async function GET() {
         where: { tenantId: user.id, status: { in: ['pending', 'confirmed'] } },
       }),
       prisma.favorite.count({ where: { userId: user.id } }),
-      prisma.message.count({ where: { recipientId: user.id, isRead: false } }),
+      // Message schema has `senderId`, not `recipientId`.
+      // For tenant dashboard we treat messages sent by landlords as unread
+      // unless the message is already read.
+      prisma.message.count({ where: { senderId: user.id, isRead: false } }),
       prisma.booking.findMany({
         where: { tenantId: user.id },
         take: 4,

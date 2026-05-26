@@ -1,7 +1,6 @@
-import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { isAdminUser } from '@/lib/admin';
+import { requireAdmin } from '@/lib/rbac';
 
 /** PATCH /api/admin/properties/:id
  *  Admin-only. Update property verification status.
@@ -12,9 +11,9 @@ export async function PATCH(
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const { userId } = await auth();
-    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    if (!isAdminUser(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    const check = await requireAdmin();
+    if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
+
 
     const { id }    = await params;
     const { verified } = await req.json();

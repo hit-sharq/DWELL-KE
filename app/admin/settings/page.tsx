@@ -253,7 +253,7 @@ export default function AdminSettingsPage() {
             {/* Fraud Sensitivity */}
             <div className="mb-6">
               <p className="text-sm font-medium text-white mb-3">Fraud Detection Sensitivity</p>
-              <div className="flex gap-3">
+              <div className="flex gap-3 flex-nowrap overflow-x-auto pb-2">
                 {(['low', 'medium', 'high'] as const).map((level) => {
                   const s = sensitivityMap[level];
                   const active = settings.fraudSensitivity === level;

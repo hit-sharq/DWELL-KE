@@ -210,7 +210,7 @@ export function PropertyForm() {
       <motion.div variants={staggerItem}>
         <label className="block text-sm font-bold text-white mb-2">Property Images</label>
         <CldUploadWidget
-          uploadPreset="dwell_ke"
+          uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
           onSuccess={(result: any) => {
             setImages([...images, result.info.secure_url]);
           }}
