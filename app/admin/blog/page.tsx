@@ -14,7 +14,7 @@ interface ContentItem {
   createdAt: string;
 }
 
-export default function AdminNewsPage() {
+export default function AdminBlogPage() {
   const [items, setItems] = useState<ContentItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -35,7 +35,7 @@ export default function AdminNewsPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await fetch('/api/admin/site-pages?filter=news');
+      const res = await fetch('/api/admin/site-pages?filter=blog');
       if (res.ok) setItems(await res.json());
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to fetch content');
@@ -49,7 +49,7 @@ export default function AdminNewsPage() {
     try {
       const body = editing
         ? { ...formData, id: editing.id }
-        : { ...formData, slug: `news/${formData.slug}` };
+        : { ...formData, slug: `blog/${formData.slug}` };
 
       const res = await fetch('/api/admin/site-pages', {
         method: editing ? 'PUT' : 'POST',
@@ -67,7 +67,7 @@ export default function AdminNewsPage() {
   };
 
   const handleDelete = async (id: string) => {
-    if (!confirm('Delete this news item?')) return;
+    if (!confirm('Delete this blog post?')) return;
     try {
       const res = await fetch(`/api/admin/site-pages?id=${id}`, { method: 'DELETE' });
       if (!res.ok) throw new Error('Failed to delete');
@@ -85,11 +85,11 @@ export default function AdminNewsPage() {
         className="flex items-center justify-between mb-8"
       >
         <div>
-          <h1 className="text-3xl font-bold text-white">News Manager</h1>
-          <p className="text-gray-400 mt-1">Create and manage news articles</p>
+          <h1 className="text-3xl font-bold text-white">Blog Manager</h1>
+          <p className="text-gray-400 mt-1">Create and manage blog posts</p>
         </div>
         <PremiumButton variant="solid" onClick={() => setShowForm(true)}>
-          + New Article
+          + New Post
         </PremiumButton>
       </motion.div>
 
@@ -103,7 +103,7 @@ export default function AdminNewsPage() {
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
           <GlassmorphicCard className="w-full max-w-2xl">
             <h2 className="text-2xl font-bold text-white mb-4">
-              {editing ? 'Edit Article' : 'New News Article'}
+              {editing ? 'Edit Post' : 'New Blog Post'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <input
@@ -118,7 +118,7 @@ export default function AdminNewsPage() {
                 type="text"
                 value={formData.title}
                 onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-                placeholder="Article title"
+                placeholder="Post title"
                 className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:border-cyan-400 outline-none"
                 required
               />
@@ -126,7 +126,7 @@ export default function AdminNewsPage() {
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                 rows={6}
-                placeholder="Article content..."
+                placeholder="Post content..."
                 className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:border-cyan-400 outline-none resize-none"
               />
               <label className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export default function AdminNewsPage() {
         </div>
       ) : items.length === 0 ? (
         <GlassmorphicCard className="text-center py-12">
-          <p className="text-gray-500">No news articles yet.</p>
+          <p className="text-gray-500">No blog posts yet.</p>
         </GlassmorphicCard>
       ) : (
         <div className="space-y-4">
@@ -169,7 +169,7 @@ export default function AdminNewsPage() {
                 <div className="flex gap-2">
                   <button onClick={() => {
                     setEditing(item);
-                    setFormData({ slug: item.slug.replace('news/', ''), title: item.title, content: item.content, isPublished: item.isPublished });
+                    setFormData({ slug: item.slug.replace('blog/', ''), title: item.title, content: item.content, isPublished: item.isPublished });
                     setShowForm(true);
                   }} className="px-3 py-1 text-sm bg-cyan-500/20 text-cyan-400 rounded">Edit</button>
                   <button onClick={() => handleDelete(item.id)} className="px-3 py-1 text-sm bg-red-500/20 text-red-400 rounded">Delete</button>

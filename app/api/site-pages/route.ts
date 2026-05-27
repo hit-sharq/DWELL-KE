@@ -1,22 +1,29 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
-// GET /api/site-pages?slug=news - public endpoint for fetching published pages
-// Returns single page if slug provided, or list of published pages
+// GET /api/site-pages?slug=news OR ?slug=blog - public endpoint for fetching published pages
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = req.nextUrl;
     const slug = searchParams.get('slug');
 
+    if (slug === 'news' || slug === 'blog') {
+      // Return all pages starting with 'news/' or 'blog/'
+      const pages = await prisma.sitePage.findMany({
+        where: {
+          slug: { startsWith: `${slug}/` },
+          isPublished: true,
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+      return NextResponse.json(pages);
+    }
+
     if (slug) {
+      // Return single page
       const page = await prisma.sitePage.findUnique({
         where: { slug, isPublished: true },
       });
-
-      if (!page) {
-        return NextResponse.json({ error: 'Page not found' }, { status: 404 });
-      }
-
       return NextResponse.json(page);
     }
 

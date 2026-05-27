@@ -13,7 +13,8 @@ const adminMenuItems = [
   { label: 'Bookings', href: '/admin/bookings', icon: '📅' },
   { label: 'Payments', href: '/admin/payments', icon: '💳' },
   { label: 'Reports', href: '/admin/reports', icon: '📈' },
-  { label: 'News & Blog', href: '/admin/news', icon: '📝' },
+  { label: 'News', href: '/admin/news', icon: '📰' },
+  { label: 'Blog', href: '/admin/blog', icon: '📝' },
   { label: 'Settings', href: '/admin/settings', icon: '⚙️' },
   { label: 'Back to System', href: '/', icon: '←' },
 ];
