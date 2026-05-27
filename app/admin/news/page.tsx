@@ -4,12 +4,14 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { GlassmorphicCard } from '@/components/GlassmorphicCard';
 import { PremiumButton } from '@/components/PremiumButton';
+import { CldUploadWidget } from 'next-cloudinary';
 
 interface ContentItem {
   id: string;
   slug: string;
   title: string;
   content: string;
+  imageUrl?: string | null;
   isPublished: boolean;
   createdAt: string;
 }
@@ -21,9 +23,9 @@ export default function AdminNewsPage() {
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<ContentItem | null>(null);
   const [formData, setFormData] = useState({
-    slug: '',
     title: '',
     content: '',
+    imageUrl: '',
     isPublished: false,
   });
 
@@ -49,7 +51,7 @@ export default function AdminNewsPage() {
     try {
       const body = editing
         ? { ...formData, id: editing.id }
-        : { ...formData, slug: `news/${formData.slug}` };
+        : { ...formData, type: 'news' };
 
       const res = await fetch('/api/admin/site-pages', {
         method: editing ? 'PUT' : 'POST',
@@ -59,7 +61,7 @@ export default function AdminNewsPage() {
       if (!res.ok) throw new Error('Failed to save');
       setShowForm(false);
       setEditing(null);
-      setFormData({ slug: '', title: '', content: '', isPublished: false });
+      setFormData({ title: '', content: '', imageUrl: '', isPublished: false });
       fetchItems();
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Failed to save');
@@ -101,19 +103,11 @@ export default function AdminNewsPage() {
 
       {showForm && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-          <GlassmorphicCard className="w-full max-w-2xl">
+          <GlassmorphicCard className="w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-white mb-4">
               {editing ? 'Edit Article' : 'New News Article'}
             </h2>
             <form onSubmit={handleSubmit} className="space-y-4">
-              <input
-                type="text"
-                value={formData.slug}
-                onChange={(e) => setFormData({ ...formData, slug: e.target.value })}
-                placeholder="url-slug"
-                className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:border-cyan-400 outline-none"
-                required
-              />
               <input
                 type="text"
                 value={formData.title}
@@ -122,6 +116,32 @@ export default function AdminNewsPage() {
                 className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:border-cyan-400 outline-none"
                 required
               />
+              <input
+                type="text"
+                value={formData.imageUrl}
+                onChange={(e) => setFormData({ ...formData, imageUrl: e.target.value })}
+                placeholder="Image URL (or upload below)"
+                className="w-full px-4 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:border-cyan-400 outline-none"
+              />
+              <CldUploadWidget
+                onSuccess={(result: any) => {
+                  const url = result?.info?.secure_url;
+                  if (url) setFormData({ ...formData, imageUrl: url });
+                }}
+                onError={(error: any) => {
+                  setError('Upload failed: ' + error.message);
+                }}
+              >
+                {({ open }) => (
+                  <button
+                    type="button"
+                    onClick={() => open()}
+                    className="w-full px-4 py-2 rounded-lg border border-dashed border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/5 transition-colors"
+                  >
+                    Upload Image
+                  </button>
+                )}
+              </CldUploadWidget>
               <textarea
                 value={formData.content}
                 onChange={(e) => setFormData({ ...formData, content: e.target.value })}
@@ -164,12 +184,15 @@ export default function AdminNewsPage() {
                 <div>
                   <h3 className="text-lg font-bold text-white">{item.title}</h3>
                   <p className="text-xs text-gray-500">/{item.slug}</p>
-                  <p className="text-sm text-gray-400 mt-2">{item.content.substring(0, 100)}...</p>
+                  {item.imageUrl && (
+                    <img src={item.imageUrl} alt={item.title} className="w-20 h-14 object-cover rounded mt-2" />
+                  )}
+                  <p className="text-sm text-gray-400 mt-2">{item.content?.substring(0, 100)}...</p>
                 </div>
                 <div className="flex gap-2">
                   <button onClick={() => {
                     setEditing(item);
-                    setFormData({ slug: item.slug.replace('news/', ''), title: item.title, content: item.content, isPublished: item.isPublished });
+                    setFormData({ title: item.title, content: item.content || '', imageUrl: item.imageUrl || '', isPublished: item.isPublished });
                     setShowForm(true);
                   }} className="px-3 py-1 text-sm bg-cyan-500/20 text-cyan-400 rounded">Edit</button>
                   <button onClick={() => handleDelete(item.id)} className="px-3 py-1 text-sm bg-red-500/20 text-red-400 rounded">Delete</button>

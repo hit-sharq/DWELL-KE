@@ -42,40 +42,43 @@ export default async function NewsPage() {
             </div>
           ) : (
             <div className={styles.newsGrid}>
-              {news.map((item) => (
-                <div key={item.id}>
-                  <article className={styles.newsCard}>
-                    {/* Image Area */}
-                    <div className={styles.newsImageWrapper}>
-                      {/* Using a placeholder image since SitePage doesn't have image field */}
-                      <img 
-                        src="/images/news-placeholder.jpg" 
-                        alt={item.title} 
-                        className={styles.newsImage}
-                      />
-                    </div>
-                    
-                    {/* Category Badge */}
-                    <span className={styles.newsCategory}>Company Update</span>
-                    
-                    {/* Content Area */}
-                    <div className={styles.newsContent}>
-                      <h2 className={styles.newsTitle}>
-                        {item.title}
-                      </h2>
-                      <p className={styles.newsExcerpt}>
-                        {item.content.substring(0, 200)}{item.content.length > 200 ? '...' : ''}
-                      </p>
-                      <Link 
-                        href={`/news?slug=${item.slug.split('/')[1]}`} 
-                        className={styles.newsReadMore}
-                      >
-                        Read More
-                      </Link>
-                    </div>
-                  </article>
-                </div>
-              ))}
+              {news.map((item) => {
+                const slugPart = item.slug.split('/')[1] || item.slug;
+                const placeholderImg = '/images/news-placeholder.jpg';
+                return (
+                  <div key={item.id}>
+                    <article className={styles.newsCard}>
+                      {/* Image Area */}
+                      <div className={styles.newsImageWrapper}>
+                        <img 
+                          src={item.imageUrl || placeholderImg} 
+                          alt={item.title} 
+                          className={styles.newsImage}
+                        />
+                      </div>
+                      
+                      {/* Category Badge */}
+                      <span className={styles.newsCategory}>Company Update</span>
+                      
+                      {/* Content Area */}
+                      <div className={styles.newsContent}>
+                        <h2 className={styles.newsTitle}>
+                          {item.title}
+                        </h2>
+                        <p className={styles.newsExcerpt}>
+                          {item.content?.substring(0, 200)}{item.content && item.content.length > 200 ? '...' : ''}
+                        </p>
+                        <Link 
+                          href={`/news/${slugPart}`} 
+                          className={styles.newsReadMore}
+                        >
+                          Read More
+                        </Link>
+                      </div>
+                    </article>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

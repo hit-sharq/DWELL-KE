@@ -41,40 +41,43 @@ export default async function BlogPage() {
             </div>
           ) : (
             <div className={styles.blogGrid}>
-              {posts.map((post) => (
-                <div key={post.id}>
-                  <article className={styles.blogCard}>
-                    {/* Image Area */}
-                    <div className={styles.blogImageWrapper}>
-                      {/* Using a placeholder image since SitePage doesn't have image field */}
-                      <img 
-                        src="/images/blog-placeholder.jpg" 
-                        alt={post.title} 
-                        className={styles.blogImage}
-                      />
-                    </div>
-                    
-                    {/* Category Badge (using a default category since no category field) */}
-                    <span className={styles.blogCategory}>Property Insights</span>
-                    
-                    {/* Content Area */}
-                    <div className={styles.blogContent}>
-                      <h2 className={styles.blogTitle}>
-                        {post.title}
-                      </h2>
-                      <p className={styles.blogExcerpt}>
-                        {post.content.substring(0, 200)}{post.content.length > 200 ? '...' : ''}
-                      </p>
-                      <Link 
-                        href={`/blog?slug=${post.slug.split('/')[1]}`} 
-                        className={styles.blogReadMore}
-                      >
-                        Read More
-                      </Link>
-                    </div>
-                  </article>
-                </div>
-              ))}
+              {posts.map((post) => {
+                const slugPart = post.slug.split('/')[1] || post.slug;
+                const placeholderImg = '/images/blog-placeholder.jpg';
+                return (
+                  <div key={post.id}>
+                    <article className={styles.blogCard}>
+                      {/* Image Area */}
+                      <div className={styles.blogImageWrapper}>
+                        <img 
+                          src={post.imageUrl || placeholderImg} 
+                          alt={post.title} 
+                          className={styles.blogImage}
+                        />
+                      </div>
+                      
+                      {/* Category Badge */}
+                      <span className={styles.blogCategory}>Property Insights</span>
+                      
+                      {/* Content Area */}
+                      <div className={styles.blogContent}>
+                        <h2 className={styles.blogTitle}>
+                          {post.title}
+                        </h2>
+                        <p className={styles.blogExcerpt}>
+                          {post.content?.substring(0, 200)}{post.content && post.content.length > 200 ? '...' : ''}
+                        </p>
+                        <Link 
+                          href={`/blog/${slugPart}`} 
+                          className={styles.blogReadMore}
+                        >
+                          Read More
+                        </Link>
+                      </div>
+                    </article>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

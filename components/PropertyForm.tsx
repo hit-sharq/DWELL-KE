@@ -210,21 +210,19 @@ export function PropertyForm() {
       <motion.div variants={staggerItem}>
         <label className="block text-sm font-bold text-white mb-2">Property Images</label>
 <CldUploadWidget
-           uploadPreset={process.env.NEXT_PUBLIC_CLOUDINARY_UPLOAD_PRESET}
-           cloudName={process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}
-           onSuccess={(result: any) => {
-             const newUrls = result?.info?.secure_url
-               ? [result.info.secure_url]
-               : Array.isArray(result) 
-                 ? result.map((r: any) => r?.info?.secure_url).filter(Boolean)
-                 : [];
-             setImages(prev => [...prev, ...newUrls]);
-           }}
-           onError={(error: any) => {
-             setError('Failed to upload image: ' + error.message);
-           }}
-           options={{ multiple: true }}
-         >
+            onSuccess={(result: any) => {
+              const newUrls = result?.info?.secure_url
+                ? [result.info.secure_url]
+                : Array.isArray(result) 
+                  ? result.map((r: any) => r?.info?.secure_url).filter(Boolean)
+                  : [];
+              setImages(prev => [...prev, ...newUrls]);
+            }}
+            onError={(error: any) => {
+              setError('Failed to upload image: ' + error.message);
+            }}
+            options={{ multiple: true }}
+          >
            {({ open }) => (
              <button
                type="button"

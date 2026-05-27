@@ -2,6 +2,26 @@ import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/rbac';
 
+function generateSlug(title: string): string {
+  return title
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .replace(/-+/g, '-');
+}
+
+async function generateUniqueSlug(baseSlug: string, prefix: string = ''): Promise<string> {
+  let slug = prefix ? `${prefix}/${baseSlug}` : baseSlug;
+  let existing = await prisma.sitePage.findUnique({ where: { slug } });
+  let counter = 1;
+  while (existing) {
+    slug = prefix ? `${prefix}/${baseSlug}-${counter}` : `${baseSlug}-${counter}`;
+    existing = await prisma.sitePage.findUnique({ where: { slug } });
+    counter++;
+  }
+  return slug;
+}
+
 export async function GET(req: NextRequest) {
   try {
     const check = await requireAdmin();
@@ -35,14 +55,18 @@ export async function POST(req: NextRequest) {
     if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
     const body = await req.json();
-    const { slug, title, content } = body;
+    const { title, content, imageUrl, type } = body;
 
-    if (!slug || !title) {
-      return NextResponse.json({ error: 'Slug and title required' }, { status: 400 });
+    if (!title) {
+      return NextResponse.json({ error: 'Title required' }, { status: 400 });
     }
 
+    const baseSlug = generateSlug(title);
+    const prefix = type === 'news' ? 'news' : 'blog';
+    const slug = await generateUniqueSlug(baseSlug, prefix);
+
     const page = await prisma.sitePage.create({
-      data: { slug, title, content: content || '' },
+      data: { slug, title, content: content || '', imageUrl: imageUrl || null },
     });
 
     return NextResponse.json(page, { status: 201 });
@@ -58,15 +82,19 @@ export async function PUT(req: NextRequest) {
     if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
 
     const body = await req.json();
-    const { id, slug, title, content, isPublished } = body;
+    const { id, slug, title, content, imageUrl, isPublished } = body;
 
     if (!id) {
       return NextResponse.json({ error: 'Page ID required' }, { status: 400 });
     }
 
+    const data: any = { title, content, isPublished };
+    if (imageUrl !== undefined) data.imageUrl = imageUrl;
+    if (slug) data.slug = slug;
+
     const page = await prisma.sitePage.update({
       where: { id },
-      data: { slug, title, content, isPublished },
+      data,
     });
 
     return NextResponse.json(page);
