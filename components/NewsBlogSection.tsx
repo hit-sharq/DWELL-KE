@@ -3,6 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { GlassmorphicCard } from '@/components/GlassmorphicCard';
+import { ChevronRight } from 'lucide-react';
 
 interface NewsItem {
   id: string;
@@ -56,16 +57,32 @@ export function NewsBlogSection() {
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
               {news.slice(0, 3).map((item) => (
-                <GlassmorphicCard key={item.id}>
-                  <Link href={`/news?slug=${item.slug.split('/')[1]}`}>
-                    <h3 className="text-xl font-bold text-white mb-2 hover:text-cyan-400 transition-colors">
-                      {item.title}
-                    </h3>
-                    <p className="text-sm text-gray-400 line-clamp-3">
-                      {item.content.substring(0, 120)}...
-                    </p>
-                  </Link>
-                </GlassmorphicCard>
+                <div key={item.id} className="group">
+                  <GlassmorphicCard className="h-full flex flex-col hover:border-cyan-400/50 transition-all duration-300">
+                    <div className="flex-1 flex flex-col">
+                      <p className="text-xs text-cyan-400/80 font-semibold uppercase tracking-wider mb-3">
+                        {new Date(item.createdAt).toLocaleDateString('en-KE', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </p>
+                      <h3 className="text-lg font-bold text-white mb-3 line-clamp-3 group-hover:text-cyan-300 transition-colors">
+                        {item.title}
+                      </h3>
+                      <p className="text-sm text-gray-400 line-clamp-3 flex-1 mb-4">
+                        {item.content.substring(0, 150)}...
+                      </p>
+                    </div>
+                    <Link 
+                      href={`/news?slug=${item.slug.split('/')[1]}`}
+                      className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-semibold text-sm transition-all duration-300 group-hover:gap-3"
+                    >
+                      Read More
+                      <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  </GlassmorphicCard>
+                </div>
               ))}
             </div>
           )}
@@ -94,16 +111,32 @@ export function NewsBlogSection() {
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
               {blogs.slice(0, 3).map((blog) => (
-                <GlassmorphicCard key={blog.id}>
-                  <Link href={`/blog?slug=${blog.slug.split('/')[1]}`}>
-                    <h3 className="text-lg font-bold text-white mb-2 hover:text-cyan-400 transition-colors">
-                      {blog.title}
-                    </h3>
-                    <p className="text-sm text-gray-400 line-clamp-3">
-                      {blog.content.substring(0, 120)}...
-                    </p>
-                  </Link>
-                </GlassmorphicCard>
+                <div key={blog.id} className="group">
+                  <GlassmorphicCard className="h-full flex flex-col hover:border-cyan-400/50 transition-all duration-300">
+                    <div className="flex-1 flex flex-col">
+                      <p className="text-xs text-cyan-400/80 font-semibold uppercase tracking-wider mb-3">
+                        {new Date(blog.createdAt).toLocaleDateString('en-KE', {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
+                      </p>
+                      <h3 className="text-lg font-bold text-white mb-3 line-clamp-3 group-hover:text-cyan-300 transition-colors">
+                        {blog.title}
+                      </h3>
+                      <p className="text-sm text-gray-400 line-clamp-3 flex-1 mb-4">
+                        {blog.content.substring(0, 150)}...
+                      </p>
+                    </div>
+                    <Link 
+                      href={`/blog?slug=${blog.slug.split('/')[1]}`}
+                      className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-semibold text-sm transition-all duration-300 group-hover:gap-3"
+                    >
+                      Read More
+                      <ChevronRight size={16} className="transition-transform group-hover:translate-x-1" />
+                    </Link>
+                  </GlassmorphicCard>
+                </div>
               ))}
             </div>
           )}

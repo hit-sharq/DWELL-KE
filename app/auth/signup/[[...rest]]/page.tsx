@@ -114,35 +114,35 @@ export default function SignupPage() {
                 Signing up as <span className="text-cyan-300 font-semibold">{role}</span>
               </p>
 
-              {/* Clerk SignUp */}
-              <SignUp
-                appearance={{
-                  elements: {
-                    formButtonPrimary:
-                      'w-full px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold ' +
-                      'shadow-[0_0_22px_-4px_rgba(34,211,238,0.45)] hover:shadow-[0_0_44px_-6px_rgba(34,211,238,0.65)] ' +
-                      'transition-all hover:-translate-y-0.5',
-                    formFieldLabel: 'text-xs font-semibold text-gray-300 mb-1.5 block uppercase tracking-wider',
-                    formFieldInput:
-                      'w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/60 text-white ' +
-                      'placeholder-gray-600 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-400/20 transition-all',
-                    footerActionLink: 'text-cyan-400 hover:text-cyan-300 font-semibold no-underline text-sm',
-                    socialButtonsIconButton:
-                      'rounded-xl border border-slate-700/60 bg-slate-900/60 hover:border-cyan-400/30 ' +
-                      'hover:bg-slate-800 text-white transition-all',
-                    socialButtonsBlockButton:
-                      'rounded-xl border border-slate-700/60 bg-slate-900/60 hover:border-cyan-400/30 ' +
-                      'hover:bg-slate-800 text-white transition-all text-sm',
-                    identityPreviewText: 'text-sm text-gray-300',
-                    identityPreviewEditButton: 'text-cyan-400 hover:text-cyan-300 text-xs',
-                  },
-                  layout: {
-                    socialButtonsPlacement: 'bottom',
-                    showFooter: false,
-                  },
-                }}
-                // We rely on /auth/verify for redirect.
-              />
+{/* Clerk SignUp */}
+               <SignUp
+                 appearance={{
+                   elements: {
+                     formButtonPrimary:
+                       'w-full px-5 py-3 rounded-xl bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold ' +
+                       'shadow-[0_0_22px_-4px_rgba(34,211,238,0.45)] hover:shadow-[0_0_44px_-6px_rgba(34,211,238,0.65)] ' +
+                       'transition-all hover:-translate-y-0.5',
+                     formFieldLabel: 'text-xs font-semibold text-gray-300 mb-1.5 block uppercase tracking-wider',
+                     formFieldInput:
+                       'w-full px-4 py-3 rounded-xl bg-slate-900/80 border border-slate-700/60 text-white ' +
+                       'placeholder-gray-600 focus:outline-none focus:border-cyan-400/60 focus:ring-2 focus:ring-cyan-400/20 transition-all',
+                     footerActionLink: 'text-cyan-400 hover:text-cyan-300 font-semibold no-underline text-sm',
+                     socialButtonsIconButton:
+                       'rounded-xl border border-slate-700/60 bg-slate-900/60 hover:border-cyan-400/30 ' +
+                       'hover:bg-slate-800 text-white transition-all',
+                     socialButtonsBlockButton:
+                       'rounded-xl border border-slate-700/60 bg-slate-900/60 hover:border-cyan-400/30 ' +
+                       'hover:bg-slate-800 text-white transition-all text-sm',
+                     identityPreviewText: 'text-sm text-gray-300',
+                     identityPreviewEditButton: 'text-cyan-400 hover:text-cyan-300 text-xs',
+                   },
+                   layout: {
+                     socialButtonsPlacement: 'bottom',
+                     showFooter: false,
+                   },
+                 }}
+                 fallbackRedirectUrl={`/auth/verify?role=${role}`}
+               />
             </motion.div>
           )}
         </AnimatePresence>

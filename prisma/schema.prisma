@@ -31,6 +31,7 @@ model User {
   favorites     Favorite[]
   messages      Message[]
   activityLogs  ActivityLog[]
+  contactMessages ContactMessage[]
 
   @@map("users")
 }
@@ -170,6 +171,24 @@ model ActivityLog {
   @@map("activity_logs")
 }
 
+// Contact Message model (for support form submissions)
+model ContactMessage {
+  id            String    @id @default(cuid())
+  subject       String
+  email         String
+  message       String    @db.Text
+  status        String    @default("pending") // pending, read, responded
+  response      String?   @db.Text
+  createdAt     DateTime  @default(now())
+  respondedAt   DateTime?
+
+  // Relations
+  userId        String?
+  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@map("contact_messages")
+}
+
 // Site Page model (for CMS content)
 model SitePage {
   id          String    @id @default(cuid())
@@ -181,4 +200,15 @@ model SitePage {
   updatedAt   DateTime  @updatedAt
 
   @@map("site_pages")
+}
+
+
+// Site Setting model (for global site settings)
+model SiteSetting {
+  id          String    @id @default(cuid())
+  key         String    @unique
+  value       String
+  description String?
+
+  @@map("site_settings")
 }

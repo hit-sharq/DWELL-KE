@@ -1,6 +1,8 @@
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { GlassmorphicCard } from '@/components/GlassmorphicCard';
+import Link from 'next/link';
+import { ChevronRight } from 'lucide-react';
+import styles from './blog.module.css';
 import { prisma } from '@/lib/db';
 
 export const metadata = {
@@ -34,19 +36,44 @@ export default async function BlogPage() {
           </div>
 
           {posts.length === 0 ? (
-            <GlassmorphicCard className="text-center py-16">
+            <div className="text-center py-16">
               <p className="text-gray-400">Stay tuned for our upcoming blog articles on Kenyan real estate.</p>
-            </GlassmorphicCard>
+            </div>
           ) : (
-            <div className="space-y-6">
+            <div className={styles.blogGrid}>
               {posts.map((post) => (
-                <GlassmorphicCard key={post.id}>
-                  <h2 className="text-2xl font-bold text-white mb-2">{post.title}</h2>
-                  <p className="text-xs text-gray-500 mb-4">
-                    {new Date(post.createdAt).toLocaleDateString()}
-                  </p>
-                  <p className="text-gray-300">{post.content}</p>
-                </GlassmorphicCard>
+                <div key={post.id}>
+                  <article className={styles.blogCard}>
+                    {/* Image Area */}
+                    <div className={styles.blogImageWrapper}>
+                      {/* Using a placeholder image since SitePage doesn't have image field */}
+                      <img 
+                        src="/images/blog-placeholder.jpg" 
+                        alt={post.title} 
+                        className={styles.blogImage}
+                      />
+                    </div>
+                    
+                    {/* Category Badge (using a default category since no category field) */}
+                    <span className={styles.blogCategory}>Property Insights</span>
+                    
+                    {/* Content Area */}
+                    <div className={styles.blogContent}>
+                      <h2 className={styles.blogTitle}>
+                        {post.title}
+                      </h2>
+                      <p className={styles.blogExcerpt}>
+                        {post.content.substring(0, 200)}{post.content.length > 200 ? '...' : ''}
+                      </p>
+                      <Link 
+                        href={`/blog?slug=${post.slug.split('/')[1]}`} 
+                        className={styles.blogReadMore}
+                      >
+                        Read More
+                      </Link>
+                    </div>
+                  </article>
+                </div>
               ))}
             </div>
           )}
