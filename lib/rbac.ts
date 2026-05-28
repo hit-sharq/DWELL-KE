@@ -11,6 +11,8 @@ export async function getCurrentUser() {
 }
 
 export async function requireRole(allowed: Role[]) {
+  // Clerk is the source of truth for admin.
+  // For tenant/landlord we still rely on DB role (used by the UI dashboards).
   const user = await getCurrentUser();
   if (!user) {
     return { ok: false as const, status: 401, error: 'Unauthorized' };
@@ -25,17 +27,16 @@ export async function requireRole(allowed: Role[]) {
 }
 
 export async function requireAdmin() {
-  // Prefer Clerk-managed admin list, so role changes can be done without DB edits.
   const { userId } = await auth();
+  if (!userId) return { ok: false as const, status: 401, error: 'Unauthorized' };
 
   const adminClerkIds = process.env.NEXT_PUBLIC_ADMIN_CLERK_IDS?.split(',') || [];
-  if (userId && adminClerkIds.includes(userId.trim())) {
-    // Keep the existing return shape.
+  if (adminClerkIds.includes(userId.trim())) {
     return { ok: true as const, status: 200, user: undefined };
   }
 
-  // Fallback to DB role for backward compatibility.
-  return requireRole(['admin']);
+  return { ok: false as const, status: 403, error: 'Forbidden' };
 }
+
 
 
