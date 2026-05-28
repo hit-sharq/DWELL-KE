@@ -38,11 +38,12 @@ export const metadata: Metadata = {
 }
 
 export const viewport = {
-  width:      'device-width',
+  width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  // Allow user pinch/zoom for accessibility on mobile.
+  userScalable: true,
 }
+
 
 export default function RootLayout({
   children,

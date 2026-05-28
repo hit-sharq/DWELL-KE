@@ -26,9 +26,41 @@
 
 .blogImageWrapper {
   height: 200px;
+}
+
+@media (max-width: 640px) {
+  .blogGrid {
+    gap: 20px;
+    padding: 0 6px;
+  }
+
+  .blogCard {
+    min-height: 360px;
+  }
+
+  .blogImageWrapper {
+    height: 160px;
+  }
+
+  .blogContent {
+    padding: 18px;
+  }
+
+  .blogTitle {
+    font-size: 1.1rem;
+  }
+
+  .blogExcerpt {
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+  }
+}
+
+.blogImageWrapper {
   overflow: hidden;
   background: var(--secondary);
 }
+
 
 .blogImage {
   width: 100%;

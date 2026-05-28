@@ -1,6 +1,6 @@
 import { Navigation } from '@/components/Navigation';
 import { HeroSection } from '@/components/HeroSection';
-import { FeaturesSection } from '@/components/FeaturesSection';
+import { HowItWorksSection } from '@/components/HowItWorksSection';
 import { CTASection } from '@/components/CTASection';
 import { Footer } from '@/components/Footer';
 import { NewsBlogSection } from '@/components/NewsBlogSection';
@@ -10,7 +10,7 @@ export default function Page() {
     <main className="min-h-screen bg-background">
       <Navigation />
       <HeroSection />
-      <FeaturesSection />
+      <HowItWorksSection />
       <CTASection />
       <NewsBlogSection />
       <Footer />

@@ -26,9 +26,41 @@
 
 .newsImageWrapper {
   height: 200px;
+}
+
+@media (max-width: 640px) {
+  .newsGrid {
+    gap: 20px;
+    padding: 0 6px;
+  }
+
+  .newsCard {
+    min-height: 360px;
+  }
+
+  .newsImageWrapper {
+    height: 160px;
+  }
+
+  .newsContent {
+    padding: 18px;
+  }
+
+  .newsTitle {
+    font-size: 1.1rem;
+  }
+
+  .newsExcerpt {
+    font-size: 0.95rem;
+    margin-bottom: 14px;
+  }
+}
+
+.newsImageWrapper {
   overflow: hidden;
   background: var(--secondary);
 }
+
 
 .newsImage {
   width: 100%;

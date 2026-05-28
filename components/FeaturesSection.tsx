@@ -2,15 +2,16 @@
 
 import React, { useRef } from 'react';
 import Link from 'next/link';
-import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
+import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { GlassmorphicCard } from './GlassmorphicCard';
 import { FEATURES } from '@/lib/constants';
 import { scrollReveal } from '@/lib/animations';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 /* ─────────────────────────────────────
-   FEATURES SECTION — Cinematic Reimagined
-   Asymmetric floating glass panels
-   with cinematic hover depth
+    FEATURES SECTION — Cinematic Reimagined
+    Asymmetric floating glass panels
+    with cinematic hover depth
 ───────────────────────────────────── */
 
 const tileConfigs = [
@@ -26,11 +27,14 @@ const tileConfigs = [
 
 function TiltedCard({ config, feature, index }: { config: typeof tileConfigs[0]; feature: typeof FEATURES[0]; index: number }) {
   const ref = useRef<HTMLDivElement>(null);
-  const mx = useMotionValue(0.5);
-  const my = useMotionValue(0.5);
+  const isMobile = useIsMobile();
+  
+  // Only enable mouse tracking on non-mobile devices
+  const mx = useMotionValue(isMobile ? 0.5 : 0.5);
+  const my = useMotionValue(isMobile ? 0.5 : 0.5);
 
-  const rX = useTransform(my, [0, 1], [12, -12]);
-  const rY = useTransform(mx, [0, 1], [-12, 12]);
+  const rX = useTransform(my, [0, 1], [isMobile ? 0 : 12, isMobile ? 0 : -12]);
+  const rY = useTransform(mx, [0, 1], [isMobile ? 0 : -12, isMobile ? 0 : 12]);
   const bgX = useTransform(mx, [0, 1], ['0%', '100%']);
   const bgY = useTransform(my, [0, 1], ['0%', '100%']);
 
@@ -42,13 +46,14 @@ function TiltedCard({ config, feature, index }: { config: typeof tileConfigs[0];
   ];
 
   const handleMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!ref.current) return;
+    if (isMobile || !ref.current) return;
     const rect = ref.current.getBoundingClientRect();
     mx.set((e.clientX - rect.left) / rect.width);
     my.set((e.clientY - rect.top)  / rect.height);
   };
 
   const handleLeave = () => {
+    if (isMobile) return;
     mx.set(0.5);
     my.set(0.5);
   };
@@ -69,7 +74,7 @@ function TiltedCard({ config, feature, index }: { config: typeof tileConfigs[0];
         delay: index * 0.09,
       }}
       className={`${config.span} perspective-[900px]`}
-      whileHover={{ scale: 1.025 }}
+      whileHover={{ scale: isMobile ? 1 : 1.025 }}
     >
       <GlassmorphicCard
         className={`
@@ -128,11 +133,13 @@ function TiltedCard({ config, feature, index }: { config: typeof tileConfigs[0];
   );
 }
 
-/* ════════════════════════════════════════ */
+/* ═════════════════════════════════════════ */
 export function FeaturesSection() {
+  const isMobile = useIsMobile();
+  
   return (
     <section
-      className="relative py-32"
+      className="relative py-24 sm:py-32"
       style={{ background: `
         radial-gradient(ellipse 80% 50% at 10% 60%, rgba(34,211,238,0.04) 0%, transparent 70%),
         radial-gradient(ellipse 60% 40% at 90% 30%, rgba(139,92,246,0.03) 0%, transparent 70%),
@@ -187,15 +194,17 @@ export function FeaturesSection() {
         </motion.div>
 
         {/* ── Asymmetric grid ── */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-5">
+        <div className={`grid gap-5 ${isMobile ? 'grid-cols-1' : 'sm:grid-cols-2 lg:grid-cols-4'}`}>
           {FEATURES.map((f, i) => (
             <TiltedCard key={f.title} config={tileConfigs[i]} feature={f} index={i} />
           ))}
         </div>
 
-      </div>
+  </div>
 
-      <div className="scene-divider mt-32" />
-    </section>
-  );
+  <div className="scene-divider mt-32" />
+</section>
+);
 }
+
+

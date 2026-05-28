@@ -82,7 +82,7 @@ export function CTASection() {
             {/* Right: short col */}
             <div className="md:max-w-xs md:text-right pt-2">
               <p className="text-gray-400 font-light text-sm leading-relaxed">
-                Verified listings. Instant M-Pesa. Zero guesswork.
+                Verified listings with fast booking.
               </p>
             </div>
           </div>
@@ -157,7 +157,8 @@ export function CTASection() {
 
             {/* ─ Trust stats bar (bottom) ─ */}
             <div className="mt-12 pt-8 border-t border-white/[0.055]">
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
+              {/* Keep cards readable on mobile; avoid overflowing/large gaps */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 sm:gap-8">
                 {[
                   { label: 'M-Pesa Integrated', icon: '💳' },
                   { label: 'AI Fraud Shield',    icon: '🛡️' },

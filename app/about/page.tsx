@@ -1,6 +1,7 @@
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
-import { GlassmorphicCard } from '@/components/GlassmorphicCard';
+import { AboutContent } from '@/components/AboutContent';
+import { FEATURES } from '@/lib/constants';
 
 export const metadata = {
   title: 'About Dwell KE - Premium Property Management',
@@ -11,50 +12,37 @@ export default function AboutPage() {
   return (
     <main className="min-h-screen bg-background">
       <Navigation />
-      <div className="pt-20 pb-12 px-6">
-        <div className="max-w-4xl mx-auto">
-          <h1 className="text-5xl font-bold text-white mb-6">About Dwell KE</h1>
-          
-          <div className="space-y-8">
-            <GlassmorphicCard>
-              <h2 className="text-2xl font-bold text-white mb-4">Our Mission</h2>
-              <p className="text-gray-400 leading-relaxed">
-                Dwell KE exists to revolutionize property rental in Kenya. We&apos;re building the most trusted platform for connecting tenants with verified landlords, ensuring secure, transparent, and seamless transactions powered by M-Pesa integration and advanced fraud detection.
-              </p>
-            </GlassmorphicCard>
 
-            <GlassmorphicCard>
-              <h2 className="text-2xl font-bold text-white mb-4">Why Choose Dwell KE?</h2>
-              <ul className="space-y-3 text-gray-400">
-                <li className="flex gap-3">
-                  <span className="text-cyan-400">✓</span>
-                  <span>All properties are verified and authenticated for your peace of mind</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-cyan-400">✓</span>
-                  <span>Secure M-Pesa payment integration for seamless transactions</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-cyan-400">✓</span>
-                  <span>Advanced AI-powered fraud detection to protect users</span>
-                </li>
-                <li className="flex gap-3">
-                  <span className="text-cyan-400">✓</span>
-                  <span>Real-time insights and notifications for property inquiries</span>
-                </li>
-              </ul>
-            </GlassmorphicCard>
+      <section className="relative overflow-hidden pt-24 pb-28 sm:pt-28 sm:pb-36">
+        <div className="absolute inset-0 -z-10 gradient-surface-alt opacity-100" />
 
-            <GlassmorphicCard>
-              <h2 className="text-2xl font-bold text-white mb-4">Our Team</h2>
-              <p className="text-gray-400 leading-relaxed">
-                Built by a passionate team of real estate professionals and technologists who understand the challenges of property rental in Kenya. We&apos;re committed to creating a platform that puts security and transparency first.
-              </p>
-            </GlassmorphicCard>
+        {/* cinematic glow blobs */}
+        <div className="absolute -top-24 -left-24 w-[420px] h-[420px] rounded-full bg-cyan-400/10 blur-[80px] -z-10" />
+        <div className="absolute top-20 -right-24 w-[360px] h-[360px] rounded-full bg-violet-500/10 blur-[80px] -z-10" />
+
+        {/* bottom fade to keep content readable */}
+        <div className="absolute inset-x-0 bottom-0 h-56 -z-10 bg-gradient-to-t from-black/60 via-black/10 to-transparent" />
+        <div
+          className="pointer-events-none absolute inset-0 opacity-[0.035]"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(34,211,238,0.5) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(34,211,238,0.5) 1px, transparent 1px)
+            `,
+            backgroundSize: '72px 72px',
+          }}
+          aria-hidden="true"
+        />
+        <div className="relative z-10">
+          <div className="max-w-7xl mx-auto px-6 lg:px-10">
+            <AboutContent FEATURES={FEATURES} />
           </div>
         </div>
-      </div>
+
+        <div className="scene-divider mt-32" />
+      </section>
       <Footer />
     </main>
   );
 }
+

@@ -25,18 +25,23 @@ export function NewsBlogSection() {
           fetch('/api/site-pages?slug=news'),
           fetch('/api/site-pages?slug=blog'),
         ]);
+
         if (newsRes.ok) setNews(await newsRes.json());
         if (blogRes.ok) setBlogs(await blogRes.json());
-      } catch {}
-      setLoading(false);
+      } catch {
+        // swallow
+      } finally {
+        setLoading(false);
+      }
     };
+
     fetchData();
   }, []);
 
   return (
     <>
       {/* News Section */}
-      <section className="py-20 px-6 bg-slate-950/50">
+      <section className="py-10 sm:py-20 px-6 bg-slate-950/50">
         <div className="max-w-7xl mx-auto">
           <div className="flex items-center justify-between mb-8">
             <h2 className="text-3xl font-bold text-white">Latest News</h2>
@@ -60,12 +65,13 @@ export function NewsBlogSection() {
               {news.slice(0, 3).map((item) => {
                 const slugPart = item.slug.split('/')[1] || item.slug;
                 const placeholderImg = '/images/news-placeholder.jpg';
+
                 return (
                   <div key={item.id}>
                     <article className="group">
                       <div className="bg-black/20 backdrop-blur-lg border border-white/10 rounded-2xl shadow-[0_0_18px_rgba(34,211,238,0.12)] transition-all duration-600 relative overflow-hidden h-full flex flex-col">
                         {/* Image Area */}
-                        <div className="h-[200px] overflow-hidden bg-slate-800/20">
+                        <div className="h-[160px] sm:h-[200px] overflow-hidden bg-slate-800/20">
                           <img
                             src={item.imageUrl || placeholderImg}
                             alt={item.title}
@@ -79,7 +85,7 @@ export function NewsBlogSection() {
                         </span>
 
                         {/* Content Area */}
-                        <div className="flex-1 flex flex-col p-6">
+                        <div className="flex-1 flex flex-col p-4 sm:p-6">
                           <p className="text-xs text-cyan-400/80 font-semibold uppercase tracking-wider mb-3">
                             {new Date(item.createdAt).toLocaleDateString('en-KE', {
                               year: 'numeric',
@@ -140,12 +146,13 @@ export function NewsBlogSection() {
               {blogs.slice(0, 3).map((blog) => {
                 const slugPart = blog.slug.split('/')[1] || blog.slug;
                 const placeholderImg = '/images/blog-placeholder.jpg';
+
                 return (
                   <div key={blog.id}>
                     <article className="group">
                       <div className="bg-black/20 backdrop-blur-lg border border-white/10 rounded-2xl shadow-[0_0_18px_rgba(34,211,238,0.12)] transition-all duration-600 relative overflow-hidden h-full flex flex-col">
                         {/* Image Area */}
-                        <div className="h-[200px] overflow-hidden bg-slate-800/20">
+                        <div className="h-[160px] sm:h-[200px] overflow-hidden bg-slate-800/20">
                           <img
                             src={blog.imageUrl || placeholderImg}
                             alt={blog.title}
@@ -159,38 +166,38 @@ export function NewsBlogSection() {
                         </span>
 
                         {/* Content Area */}
-                        <div className="flex-1 flex flex-col p-6">
-                          <p className="text-xs text-cyan-400/80 font-semibold uppercase tracking-wider mb-3">
-                            {new Date(blog.createdAt).toLocaleDateString('en-KE', {
-                              year: 'numeric',
-                              month: 'short',
-                              day: 'numeric',
-                            })}
-                          </p>
+                         <div className="flex-1 flex flex-col p-4 sm:p-6">
+                           <p className="text-xs text-cyan-400/80 font-semibold uppercase tracking-wider mb-3">
+                             {new Date(blog.createdAt).toLocaleDateString('en-KE', {
+                               year: 'numeric',
+                               month: 'short',
+                               day: 'numeric',
+                             })}
+                           </p>
 
-                          <h3 className="text-lg font-bold text-white mb-3 line-clamp-3 transition-colors">
-                            {blog.title}
-                          </h3>
+                           <h3 className="text-lg font-bold text-white mb-3 line-clamp-3 transition-colors">
+                             {blog.title}
+                           </h3>
 
-                          <p className="text-sm text-gray-400 line-clamp-3 flex-1 mb-4">
-                            {blog.content.substring(0, 150)}...
-                          </p>
+                           <p className="text-sm text-gray-400 line-clamp-3 flex-1 mb-4">
+                             {blog.content.substring(0, 150)}...
+                           </p>
 
-                          <Link
-                            href={`/blog/${slugPart}`}
-                            className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-semibold text-sm transition-all duration-300"
-                          >
-                            Read More
-                            <ChevronRight
-                              size={16}
-                              className="transition-transform group-hover:translate-x-1"
-                            />
-                          </Link>
-                        </div>
-                      </div>
-                    </article>
-                  </div>
-                );
+                           <Link
+                             href={`/blog/${slugPart}`}
+                             className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-semibold text-sm transition-all duration-300"
+                           >
+                             Read More
+                             <ChevronRight
+                               size={16}
+                               className="transition-transform group-hover:translate-x-1"
+                             />
+                           </Link>
+                         </div>
+                       </div>
+                     </article>
+                   </div>
+                 );
               })}
             </div>
           )}
