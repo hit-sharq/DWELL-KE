@@ -66,6 +66,8 @@ export function NewsBlogSection() {
                 const slugPart = item.slug.split('/')[1] || item.slug;
                 const placeholderImg = '/images/news-placeholder.jpg';
 
+                const newsSlug = item.slug.startsWith('news/') ? item.slug.replace(/^news\//, '') : item.slug;
+
                 return (
                   <div key={item.id}>
                     <article className="group">
@@ -78,6 +80,7 @@ export function NewsBlogSection() {
                             className="w-full h-full object-fit-cover transition-transform duration-400 group-hover:scale-105"
                           />
                         </div>
+
 
                         {/* Category Badge */}
                         <span className="absolute top-4 right-4 bg-cyan-500/40 backdrop-blur text-cyan-50 px-3 py-1 rounded-full text-xs font-medium border border-cyan-400/20">
@@ -101,7 +104,7 @@ export function NewsBlogSection() {
                           </p>
 
                           <Link
-                            href={`/news/${slugPart}`}
+                            href={`/news/${newsSlug}`}
                             className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-semibold text-sm transition-all duration-300"
                           >
                             Read More
@@ -144,7 +147,7 @@ export function NewsBlogSection() {
           ) : (
             <div className="grid md:grid-cols-3 gap-6">
               {blogs.slice(0, 3).map((blog) => {
-                const slugPart = blog.slug.split('/')[1] || blog.slug;
+                const blogSlug = blog.slug.startsWith('blog/') ? blog.slug.replace(/^blog\//, '') : blog.slug;
                 const placeholderImg = '/images/blog-placeholder.jpg';
 
                 return (
@@ -184,7 +187,7 @@ export function NewsBlogSection() {
                            </p>
 
                            <Link
-                             href={`/blog/${slugPart}`}
+                             href={`/blog/${blogSlug}`}
                              className="inline-flex items-center gap-2 text-cyan-400 hover:text-cyan-300 font-semibold text-sm transition-all duration-300"
                            >
                              Read More
