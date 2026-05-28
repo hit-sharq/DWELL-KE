@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 import { requireAdmin } from '@/lib/rbac';
+import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
 /** GET /api/admin/properties  — list all properties (admin only) */
 export async function GET(req: NextRequest) {
@@ -42,9 +43,29 @@ export async function GET(req: NextRequest) {
     }));
 
     return NextResponse.json(shaped);
-  } catch (error) {
+  } catch (error: any) {
     console.error('[Admin Properties GET]', error);
-    return NextResponse.json({ error: 'Failed to fetch properties' }, { status: 500 });
+    if (error instanceof PrismaClientKnownRequestError) {
+      // Handle known Prisma errors
+      if (error.code === 'P2002') {
+        // Unique constraint violation
+        return NextResponse.json(
+          { error: 'A property with that identifier already exists.' },
+          { status: 400 }
+        );
+      }
+      if (error.code === 'P2025') {
+        // Record not found
+        return NextResponse.json(
+          { error: 'Requested resource not found.' },
+          { status: 404 }
+        );
+      }
+      // Add more error codes as needed
+    }
+    return NextResponse.json(
+      { error: 'Failed to fetch properties' },
+      { status: 500 }
+    );
   }
 }
-

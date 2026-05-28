@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { staggerContainer, staggerItem } from '@/lib/animations';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
+import ErrorAlert from '@/components/ErrorAlert';
 
 interface Property {
   id: string;
@@ -29,7 +30,7 @@ export default function MarketplacePage() {
   const [properties, setProperties] = useState<Property[]>([]);
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [error, setError] = useState<string | null>(null);
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -44,8 +45,12 @@ export default function MarketplacePage() {
     const fetchProperties = async () => {
       try {
         setIsLoading(true);
+        setError(null);
         const response = await fetch('/api/properties');
-        if (!response.ok) throw new Error('Failed to fetch properties');
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'Failed to fetch properties');
+        }
 
         const data = await response.json();
         setProperties(data);
@@ -263,9 +268,7 @@ export default function MarketplacePage() {
                 <div className="text-gray-400">Loading properties...</div>
               </div>
             ) : error ? (
-              <div className="p-6 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400">
-                {error}
-              </div>
+              <ErrorAlert message={error} />
             ) : filteredProperties.length === 0 ? (
               <div className="text-center py-12">
                 <div className="text-gray-400 text-lg">

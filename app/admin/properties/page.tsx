@@ -6,6 +6,7 @@ import Link from 'next/link';
 import { GlassmorphicCard } from '@/components/GlassmorphicCard';
 import { PremiumButton } from '@/components/PremiumButton';
 import { scrollReveal } from '@/lib/animations';
+import ErrorAlert from '@/components/ErrorAlert';
 
 type PropertyItem = {
   id: string;
@@ -28,21 +29,25 @@ export default function AdminPropertiesPage() {
   const [properties, setProperties] = useState<PropertyItem[]>([]);
   const [statusFilter, setStatusFilter] = useState<'all' | 'verified' | 'pending'>('all');
   const [loading, setLoading]       = useState(true);
-  const [error, setError]           = useState('');
+  const [error, setError]           = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
       setLoading(true);
-      setError('');
+      setError(null);
       try {
         const params = new URLSearchParams();
         if (statusFilter !== 'all') params.append('status', statusFilter);
         const res = await fetch(`/api/admin/properties?${params}`);
-        if (!res.ok) throw new Error('Failed to fetch properties');
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.error || 'Failed to fetch properties');
+        }
         setProperties(await res.json());
       } catch (e: unknown) {
-        setError(e instanceof Error ? e.message : 'Error fetching properties');
+        const message = e instanceof Error ? e.message : 'Error fetching properties';
+        setError(message);
       } finally {
         setLoading(false);
       }
@@ -51,26 +56,30 @@ export default function AdminPropertiesPage() {
 
   const toggleVerified = async (id: string, verified: boolean) => {
     setUpdatingId(id);
+    setError(null);
     try {
       const res = await fetch(`/api/admin/properties/${id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ verified: !verified }),
       });
-      if (!res.ok) throw new Error('Failed to update');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || 'Failed to update');
+      }
       setProperties((prev) =>
         prev.map((p) => (p.id === id ? { ...p, verified: !verified } : p))
       );
-    } catch {
-      // handled silently — server error logged
+    } catch (e: unknown) {
+      const message = e instanceof Error ? e.message : 'Error updating property';
+      setError(message);
     } finally {
       setUpdatingId(null);
     }
   };
 
-return (
+  return (
     <div className="py-10 px-8">
-
       {/* ── Header ── */}
       <motion.div {...scrollReveal} className="mb-10">
         <div className="flex items-center gap-3 mb-2">
@@ -95,7 +104,7 @@ return (
         </div>
       </motion.div>
 
-{/* ── Filters ── */}
+      {/* ── Filters ── */}
       <motion.div
         initial={{ opacity: 0, y: 18 }}
         animate={{ opacity: 1, y: 0 }}
@@ -119,9 +128,7 @@ return (
       </motion.div>
 
       {error && !loading && (
-        <GlassmorphicCard className="border-red-400/20 bg-red-500/5 mb-8">
-          <p className="text-red-400 text-sm">{error}</p>
-        </GlassmorphicCard>
+        <ErrorAlert message={error} />
       )}
 
       {/* ── Grid ── */}
@@ -165,7 +172,7 @@ return (
                           </h3>
                           {p.featured && (
                             <span className="px-1.5 py-0.5 rounded text-[9px] font-semibold uppercase tracking-wider
-                                           bg-amber-500/15 text-amber-400 border border-amber-500/20 shrink-0">
+                                       bg-amber-500/15 text-amber-400 border border-amber-500/20 shrink-0">
                               ★ Featured
                             </span>
                           )}
@@ -174,12 +181,12 @@ return (
                       </div>
                       {p.verified ? (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider
-                                         bg-emerald-500/12 text-emerald-400 border border-emerald-500/18">
+                                     bg-emerald-500/12 text-emerald-400 border border-emerald-500/18">
                           ✓ Verified
                         </span>
                       ) : (
                         <span className="px-2.5 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider
-                                         bg-yellow-500/12 text-yellow-400 border border-yellow-500/18">
+                                     bg-yellow-500/12 text-yellow-400 border border-yellow-500/18">
                           Pending
                         </span>
                       )}
@@ -197,7 +204,7 @@ return (
                     {/* Landlord row */}
                     <div className="flex items-center gap-3 mb-5">
                       <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500/20 to-cyan-500/15
-                                      border border-cyan-400/10 flex items-center justify-center text-white text-xs font-bold">
+                                       border border-cyan-400/10 flex items-center justify-center text-white text-xs font-bold">
                         {p.landlord.firstName?.[0] || '?'}
                       </div>
                       <div>
