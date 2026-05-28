@@ -25,6 +25,17 @@ export async function requireRole(allowed: Role[]) {
 }
 
 export async function requireAdmin() {
+  // Prefer Clerk-managed admin list, so role changes can be done without DB edits.
+  const { userId } = await auth();
+
+  const adminClerkIds = process.env.NEXT_PUBLIC_ADMIN_CLERK_IDS?.split(',') || [];
+  if (userId && adminClerkIds.includes(userId.trim())) {
+    // Keep the existing return shape.
+    return { ok: true as const, status: 200, user: undefined };
+  }
+
+  // Fallback to DB role for backward compatibility.
   return requireRole(['admin']);
 }
+
 

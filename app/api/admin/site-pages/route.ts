@@ -1,6 +1,7 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/rbac';
+import { isAdminUser } from '@/lib/admin';
+import { auth } from '@clerk/nextjs/server';
 
 function generateSlug(title: string): string {
   return title
@@ -24,8 +25,10 @@ async function generateUniqueSlug(baseSlug: string, prefix: string = ''): Promis
 
 export async function GET(req: NextRequest) {
   try {
-    const check = await requireAdmin();
-    if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
+    const { userId } = await auth();
+    if (!userId || !isAdminUser(userId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const { searchParams } = req.nextUrl;
     const filter = searchParams.get('filter');
@@ -51,8 +54,10 @@ export async function GET(req: NextRequest) {
 
 export async function POST(req: NextRequest) {
   try {
-    const check = await requireAdmin();
-    if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
+    const { userId } = await auth();
+    if (!userId || !isAdminUser(userId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const body = await req.json();
     const { title, content, imageUrl, type } = body;
@@ -78,8 +83,10 @@ export async function POST(req: NextRequest) {
 
 export async function PUT(req: NextRequest) {
   try {
-    const check = await requireAdmin();
-    if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
+    const { userId } = await auth();
+    if (!userId || !isAdminUser(userId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const body = await req.json();
     const { id, slug, title, content, imageUrl, isPublished } = body;
@@ -106,8 +113,10 @@ export async function PUT(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   try {
-    const check = await requireAdmin();
-    if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
+    const { userId } = await auth();
+    if (!userId || !isAdminUser(userId)) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
     const { searchParams } = req.nextUrl;
     const id = searchParams.get('id');
