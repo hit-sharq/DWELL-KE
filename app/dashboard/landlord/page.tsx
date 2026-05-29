@@ -83,6 +83,17 @@ export default function LandlordDashboardPage() {
 
       const fetchData = async () => {
         try {
+          // Gate the landlord dashboard behind onboarding approval
+          // so landlords must complete the KYC/application flow.
+          const statusRes = await fetch('/api/landlord/application-status');
+          if (statusRes.ok) {
+            const statusJson = await statusRes.json();
+            if (statusJson?.status !== 'approved') {
+              window.location.href = '/become-landlord';
+              return;
+            }
+          }
+
           const response = await fetch('/api/dashboard/landlord/stats');
           if (response.ok) {
             const result = await response.json();

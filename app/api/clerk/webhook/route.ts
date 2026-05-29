@@ -78,16 +78,21 @@ export async function POST(req: NextRequest) {
       });
 
       if (existingUser) {
+        // Determine if user should be an admin based on clerk ID list
+        const adminClerkIds = process.env.NEXT_PUBLIC_ADMIN_CLERK_IDS?.split(',') || [];
+        const isAdmin = adminClerkIds.includes(clerkId);
+        
         await prisma.user.update({
           where: { clerkId },
           data: {
             firstName,
             lastName,
             profileImage: imageUrl,
+            role: isAdmin ? 'admin' : existingUser.role, // Only change to admin if in list, otherwise keep existing role
           },
         });
 
-        console.log(`[Webhook] User updated: ${clerkId}`);
+        console.log(`[Webhook] User updated: ${clerkId} (admin: ${isAdmin})`);
       }
     }
 

@@ -14,7 +14,7 @@ export default async function AdminLayout({ children }: { children: ReactNode })
   return (
     <div className="min-h-screen bg-background">
       <AdminNav />
-      <main className="ml-64">
+      <main className="ml-0 lg:ml-64 pt-16 lg:pt-0">
         {children}
       </main>
     </div>

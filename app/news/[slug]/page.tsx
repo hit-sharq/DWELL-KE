@@ -12,11 +12,9 @@ export const metadata = {
 export default async function NewsPage({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
 
-  const news = await prisma.sitePage.findFirst({
-    where: {
-      OR: [{ slug: `news/${slug}` }, { slug }, { slug: `blog/${slug}` }, { slug: `site/${slug}` }],
-    },
-  });
+   const news = await prisma.sitePage.findUnique({
+     where: { slug: `news/${slug}` },
+   });
 
   if (!news) {
     return (

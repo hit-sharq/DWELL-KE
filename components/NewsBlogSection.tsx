@@ -51,12 +51,13 @@ export function NewsBlogSection() {
           </div>
 
           {loading ? (
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse rounded-2xl bg-slate-800/20 h-32" />
+                <div key={i} className="animate-pulse rounded-xl bg-slate-800/20 h-26" />
               ))}
             </div>
           ) : news.length === 0 ? (
+
             <div className="py-8 text-center">
               <p className="text-gray-500">No news articles yet.</p>
             </div>
@@ -135,9 +136,9 @@ export function NewsBlogSection() {
           </div>
 
           {loading ? (
-            <div className="grid md:grid-cols-3 gap-6">
+            <div className="grid md:grid-cols-3 gap-4">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse rounded-2xl bg-slate-800/20 h-32" />
+                <div key={i} className="animate-pulse rounded-xl bg-slate-800/20 h-26" />
               ))}
             </div>
           ) : blogs.length === 0 ? (

@@ -16,11 +16,9 @@ export default async function BlogPostPage({
 }) {
   const { slug } = await params;
 
-  const post = await prisma.sitePage.findFirst({
-    where: {
-      OR: [{ slug: `blog/${slug}` }, { slug }],
-    },
-  });
+   const post = await prisma.sitePage.findUnique({
+     where: { slug: `blog/${slug}` },
+   });
 
   if (!post) {
     return (
