@@ -27,3 +27,32 @@ export async function sendEmail({ to, subject, html }: SendEmailOptions) {
   const info = await transporter.sendMail(mailOptions);
   return info;
 }
+
+export function getLandlordApprovalEmail(landlordName: string, propertyTitle: string): { subject: string; html: string } {
+  const subject = `Your Landlord Application Has Been Approved - ${propertyTitle}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Congratulations, ${landlordName}!</h2>
+      <p>Your application to become a landlord for "${propertyTitle}" has been approved.</p>
+      <p>You can now start managing this property through your dashboard.</p>
+      <p>Thank you for choosing Dwell KE!</p>
+    </div>
+  `;
+  return { subject, html };
+}
+
+export function getLandlordDenialEmail(landlordName: string, propertyTitle: string, reason: string): { subject: string; html: string } {
+  const subject = `Update on Your Landlord Application for ${propertyTitle}`;
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Hello ${landlordName},</h2>
+      <p>Thank you for your interest in becoming a landlord for "${propertyTitle}".</p>
+      <p>After careful review, we regret to inform you that your application has been denied for the following reason:</p>
+      <p><em>${reason}</em></p>
+      <p>If you have any questions or would like to reapply in the future, please don't hesitate to reach out.</p>
+      <p>Best regards,</p>
+      <p>The Dwell KE Team</p>
+    </div>
+  `;
+  return { subject, html };
+}

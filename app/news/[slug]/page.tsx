@@ -9,10 +9,13 @@ export const metadata = {
   description: 'Read the latest news article from Dwell KE.',
 };
 
-export default async function NewsPage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
-  const news = await prisma.sitePage.findUnique({
-    where: { slug: `news/${slug}` },
+export default async function NewsPage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+
+  const news = await prisma.sitePage.findFirst({
+    where: {
+      OR: [{ slug: `news/${slug}` }, { slug }, { slug: `blog/${slug}` }, { slug: `site/${slug}` }],
+    },
   });
 
   if (!news) {

@@ -13,7 +13,7 @@ export const metadata = {
 async function getPosts() {
   try {
     const posts = await prisma.sitePage.findMany({
-      where: { slug: { startsWith: 'blog' }, isPublished: true },
+      where: { slug: { startsWith: 'blog/' }, isPublished: true },
       orderBy: { createdAt: 'desc' },
     });
     return posts;
@@ -28,60 +28,66 @@ export default async function BlogPage() {
   return (
     <main className="min-h-screen bg-background">
       <Navigation />
-      <div className="pt-20 pb-12 px-6">
-        <div className="max-w-4xl mx-auto">
-          <div className="text-center mb-16">
-            <h1 className="text-5xl font-bold text-white mb-4">Blog</h1>
-            <p className="text-gray-400 text-lg">Coming soon — property insights and market trends</p>
-          </div>
-
-          {posts.length === 0 ? (
-            <div className="text-center py-16">
-              <p className="text-gray-400">Stay tuned for our upcoming blog articles on Kenyan real estate.</p>
-            </div>
-          ) : (
-            <div className={styles.blogGrid}>
-              {posts.map((post) => {
-                const slugPart = post.slug.split('/')[1] || post.slug;
-                const placeholderImg = '/images/blog-placeholder.jpg';
-                return (
-                  <div key={post.id}>
-                    <article className={styles.blogCard}>
-                      {/* Image Area */}
-                      <div className={styles.blogImageWrapper}>
-                        <img 
-                          src={post.imageUrl || placeholderImg} 
-                          alt={post.title} 
-                          className={styles.blogImage}
-                        />
+       <div className="pt-20 pb-12 px-6">
+         <div className="max-w-4xl mx-auto">
+           {posts.length === 0 ? (
+             <>
+               <div className="text-center mb-16">
+                 <h1 className="text-5xl font-bold text-white mb-4">Blog</h1>
+                 <p className="text-gray-400 text-lg">Coming soon — property insights and market trends</p>
+               </div>
+               <div className="text-center py-16">
+                 <p className="text-gray-400">Stay tuned for our upcoming blog articles on Kenyan real estate.</p>
+               </div>
+             </>
+           ) : (
+             <>
+               <div className="text-center mb-16">
+                 <h1 className="text-5xl font-bold text-white mb-4">Blog</h1>
+               </div>
+                <div className={styles.blogGrid}>
+                  {posts.map((post) => {
+                    const slugPart = post.slug.startsWith('blog/') ? post.slug.replace(/^blog\//, '') : post.slug;
+                    const placeholderImg = '/images/blog-placeholder.jpg';
+                    return (
+                      <div key={post.id}>
+                        <article className={styles.blogCard}>
+                          {/* Image Area */}
+                          <div className={styles.blogImageWrapper}>
+                            <img 
+                              src={post.imageUrl || placeholderImg} 
+                              alt={post.title} 
+                              className={styles.blogImage}
+                            />
+                          </div>
+                          
+                          {/* Category Badge */}
+                          <span className={styles.blogCategory}>Property Insights</span>
+                          
+                          {/* Content Area */}
+                          <div className={styles.blogContent}>
+                            <h2 className={styles.blogTitle}>
+                              {post.title}
+                            </h2>
+                            <p className={styles.blogExcerpt}>
+                              {post.content?.substring(0, 200)}{post.content && post.content.length > 200 ? '...' : ''}
+                            </p>
+                            <Link 
+                              href={`/blog/${slugPart}`} 
+                              className={styles.blogReadMore}
+                            >
+                              Read More
+                            </Link>
+                          </div>
+                        </article>
                       </div>
-                      
-                      {/* Category Badge */}
-                      <span className={styles.blogCategory}>Property Insights</span>
-                      
-                      {/* Content Area */}
-                      <div className={styles.blogContent}>
-                        <h2 className={styles.blogTitle}>
-                          {post.title}
-                        </h2>
-                        <p className={styles.blogExcerpt}>
-                          {post.content?.substring(0, 200)}{post.content && post.content.length > 200 ? '...' : ''}
-                        </p>
-                        <Link 
-                          href={`/blog/${slugPart}`} 
-                          className={styles.blogReadMore}
-                        >
-                          Read More
-                        </Link>
-                      </div>
-                    </article>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-        </div>
-      </div>
+                    );
+                  })}
+                </div>
+             </>
+           )}
+         </div>
+       </div>
       <Footer />
     </main>
   );

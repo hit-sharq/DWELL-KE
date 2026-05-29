@@ -2,6 +2,7 @@ import type { Metadata } from 'next'
 import { Playfair_Display, Inter } from 'next/font/google'
 import { ClerkProvider } from '@clerk/nextjs'
 import { Analytics } from '@vercel/analytics/next'
+import { Toaster } from '@/components/ui/sonner'
 import './globals.css'
 
 /* ─── Cinematic type scale ─── */
@@ -76,6 +77,7 @@ export default function RootLayout({
           suppressHydrationWarning
         >
           {children}
+          <Toaster position="top-right" richColors closeButton />
           {process.env.NODE_ENV === 'production' && <Analytics />}
         </body>
       </html>

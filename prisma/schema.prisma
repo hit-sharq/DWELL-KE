@@ -213,3 +213,43 @@ model SiteSetting {
 
   @@map("site_settings")
 }
+
+// Landlord Onboarding Application model
+model LandlordApplication {
+  id                    String    @id @default(cuid())
+  
+  // Applicant Info
+  userId                String    @unique
+  fullName              String
+  email                 String
+  phoneNumber           String
+  
+  // Document URLs (stored in Vercel Blob)
+  nationalIdUrl         String?   // National ID or Passport
+  titleDeedUrl          String?   // Title Deed or Leasehold Certificate
+  managementAgreementUrl String?  // Property Management Agreement (if agent)
+  complianceCertUrl     String?   // Local Authority Compliance Certificates
+  safetyCertUrl         String?   // Safety & Utility Certificates
+  taxComplianceUrl      String?   // Tax Compliance Certificate (KRA PIN)
+  bankProofUrl          String?   // Bank Account Proof
+  leaseTemplateUrl      String?   // Standard Lease Agreement Template
+  
+  // Additional Info
+  businessName          String?   // If registering as a business
+  kraPin                String?   // KRA PIN number
+  bankName              String?
+  bankAccountNumber     String?
+  bankAccountName       String?
+  
+  // Application Status
+  status                String    @default("pending") // pending, under_review, approved, denied
+  reviewNotes           String?   @db.Text
+  denialReason          String?   @db.Text
+  reviewedBy            String?   // Admin Clerk ID who reviewed
+  reviewedAt            DateTime?
+  
+  createdAt             DateTime  @default(now())
+  updatedAt             DateTime  @updatedAt
+
+  @@map("landlord_applications")
+}
