@@ -21,16 +21,6 @@ export default function OnboardingRedirect() {
     if (protectedPaths.some(p => pathname.startsWith(p))) return;
 
     // Fetch application status to determine if user is an approved landlord
-    // We'll rely on the user role from DB (updated via webhook) for simplicity.
-    // If role is landlord, go to landlord dashboard.
-    // If role is tenant (or not landlord) and has no approved application, go to become-landlord.
-    // Since we don't have role in Clerk user object, we need to check via an endpoint or rely on middleware?
-    // Simpler: check if user has landlord role by looking at a flag we could store in public metadata?
-    // However, we already have the role in the DB; we can call /api/landlord/application-status.
-    // If status is approved, treat as landlord.
-    // If status is none/pending/denied, treat as not landlord.
-
-    // We'll do a quick fetch; if it fails, we silently skip to avoid blocking UI.
     async function checkStatus() {
       try {
         const res = await fetch('/api/landlord/application-status');
@@ -43,12 +33,8 @@ export default function OnboardingRedirect() {
           if (!pathname.startsWith('/dashboard/landlord')) {
             router.push('/dashboard/landlord');
           }
-        } else {
-          // User is not an approved landlord; send them to onboarding if not already there
-          if (pathname !== '/become-landlord') {
-            router.push('/become-landlord');
-          }
         }
+        // If not approved, stay on current page; let user navigate to become-landlord via UI if they wish
       } catch (err) {
         console.warn('Failed to check landlord application status:', err);
       }
