@@ -6,38 +6,19 @@ import Link from 'next/link';
 import { PremiumButton } from '@/components/PremiumButton';
 import { GlassmorphicCard } from '@/components/GlassmorphicCard';
 
-interface AnalyticsData {
-  totalUsers: number;
-  totalProperties: number;
-  totalBookings: number;
-  totalRevenue: number;
-  completedPayments: number;
-  failedPayments: number;
-  pendingVerifications: number;
-  recentUsers: Array<{
-    id: string;
-    firstName: string;
-    lastName: string;
-    email: string;
-    role: string;
-    createdAt: string;
-  }>;
-  recentBookings: Array<{
-    id: string;
-    status: string;
-    totalPrice: number;
-    tenant: { firstName: string; lastName: string };
-    property: { title: string; location: string };
-  }>;
-  recentProperties: Array<{
-    id: string;
-    title: string;
-    landlord: { firstName: string; lastName: string };
-  }>;
-}
+type StatsApiResponse = {
+  stats: Array<{ label: string; value: string; trend: string | null }>;
+  alerts: Array<{ type: string; description: string; severity: string }>;
+  recentUsers: Array<{ id: string; name: string; email: string; role: string; joined: string }>;
+  recentBookings: Array<{ id: string; tenant: string; property: string; amount: string; status: string }>;
+  recentProperties: Array<{ id: string; title: string; landlord: { firstName: string | null; lastName: string | null } }>;
+  monthlyBookings: Array<{ month: string; bookings: number }>;
+};
+
 
 export default function AdminAnalyticsPage() {
-  const [analytics, setAnalytics] = useState<AnalyticsData | null>(null);
+  const [analytics, setAnalytics] = useState<StatsApiResponse | null>(null);
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -86,55 +67,54 @@ export default function AdminAnalyticsPage() {
             <div className="text-center py-12 text-gray-400">Loading analytics...</div>
           ) : analytics ? (
             <>
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
-                <GlassmorphicCard>
-                  <p className="text-gray-400 text-sm mb-2">Total Users</p>
-                  <p className="text-3xl font-bold text-cyan-400">
-                    {analytics.totalUsers.toLocaleString()}
-                  </p>
-                </GlassmorphicCard>
-                <GlassmorphicCard>
-                  <p className="text-gray-400 text-sm mb-2">Total Properties</p>
-                  <p className="text-3xl font-bold text-emerald-400">
-                    {analytics.totalProperties.toLocaleString()}
-                  </p>
-                </GlassmorphicCard>
-                <GlassmorphicCard>
-                  <p className="text-gray-400 text-sm mb-2">Total Bookings</p>
-                  <p className="text-3xl font-bold text-yellow-400">
-                    {analytics.totalBookings.toLocaleString()}
-                  </p>
-                </GlassmorphicCard>
-                <GlassmorphicCard>
-                  <p className="text-gray-400 text-sm mb-2">Total Revenue</p>
-                  <p className="text-3xl font-bold text-purple-400">
-                    KES {analytics.totalRevenue.toLocaleString()}
-                  </p>
-                </GlassmorphicCard>
-              </div>
+              {(() => {
+                const byLabel = new Map(analytics.stats.map((s) => [s.label, s.value] as const));
 
-              {/* Payment Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
-                <GlassmorphicCard>
-                  <p className="text-gray-400 text-sm mb-2">Completed Payments</p>
-                  <p className="text-2xl font-bold text-green-400">
-                    {analytics.completedPayments}
-                  </p>
-                </GlassmorphicCard>
-                <GlassmorphicCard>
-                  <p className="text-gray-400 text-sm mb-2">Failed Payments</p>
-                  <p className="text-2xl font-bold text-red-400">
-                    {analytics.failedPayments}
-                  </p>
-                </GlassmorphicCard>
-                <GlassmorphicCard>
-                  <p className="text-gray-400 text-sm mb-2">Pending Verification</p>
-                  <p className="text-2xl font-bold text-yellow-400">
-                    {analytics.pendingVerifications}
-                  </p>
-                </GlassmorphicCard>
-              </div>
+                const get = (label: string) => byLabel.get(label) ?? '0';
+
+                return (
+                  <>
+                    {/* Stats Grid */}
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+                      <GlassmorphicCard>
+                        <p className="text-gray-400 text-sm mb-2">Total Users</p>
+                        <p className="text-3xl font-bold text-cyan-400">{get('Total Users')}</p>
+                      </GlassmorphicCard>
+                      <GlassmorphicCard>
+                        <p className="text-gray-400 text-sm mb-2">Total Properties</p>
+                        <p className="text-3xl font-bold text-emerald-400">
+                          {get('Active Properties')}
+                        </p>
+                      </GlassmorphicCard>
+                      <GlassmorphicCard>
+                        <p className="text-gray-400 text-sm mb-2">Total Bookings</p>
+                        <p className="text-3xl font-bold text-yellow-400">{get('Total Bookings')}</p>
+                      </GlassmorphicCard>
+                      <GlassmorphicCard>
+                        <p className="text-gray-400 text-sm mb-2">Total Revenue</p>
+                        <p className="text-3xl font-bold text-purple-400">{get('Total Revenue')}</p>
+                      </GlassmorphicCard>
+                    </div>
+
+                    {/* Payment Stats */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+                      <GlassmorphicCard>
+                        <p className="text-gray-400 text-sm mb-2">Completed Payments</p>
+                        <p className="text-2xl font-bold text-green-400">{get('Completed Payments')}</p>
+                      </GlassmorphicCard>
+                      <GlassmorphicCard>
+                        <p className="text-gray-400 text-sm mb-2">Failed Payments</p>
+                        <p className="text-2xl font-bold text-red-400">{get('Failed Payments')}</p>
+                      </GlassmorphicCard>
+                      <GlassmorphicCard>
+                        <p className="text-gray-400 text-sm mb-2">Pending Verification</p>
+                        <p className="text-2xl font-bold text-yellow-400">{get('Pending Verification')}</p>
+                      </GlassmorphicCard>
+                    </div>
+                  </>
+                );
+              })()}
+
 
               {/* Recent Activity */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -143,6 +123,7 @@ export default function AdminAnalyticsPage() {
                   <h2 className="text-xl font-bold text-white mb-4">Recent Users</h2>
                   <div className="space-y-3">
                     {analytics.recentUsers.map((user) => (
+
                       <div key={user.id} className="p-3 rounded-lg bg-slate-900/40 border border-white/[0.04]">
                         <p className="text-white font-medium">
                           {user.firstName} {user.lastName}
