@@ -25,13 +25,17 @@ model User {
   updatedAt     DateTime  @updatedAt
 
   // Relations
-  properties    Property[]
+  properties    Property[] @relation("Landlord")
   bookings      Booking[]
   reviews       Review[]
   favorites     Favorite[]
   messages      Message[]
   activityLogs  ActivityLog[]
   contactMessages ContactMessage[]
+  verifiedProperties Property[] @relation("VerifiedBy")
+  propertyRequests PropertyRequest[] @relation("PropertyRequestTenant")
+  viewingsAsTenant Viewing[] @relation("ViewingTenant")
+  viewingsAsLandlord Viewing[] @relation("ViewingLandlord")
 
   @@map("users")
 }
@@ -56,14 +60,19 @@ model Property {
   status        String    @default("available") // available, occupied, unavailable
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  verifiedAt    DateTime?
+  verifiedBy    User?     @relation("VerifiedBy", fields: [verifiedById], references: [id])
+  verifiedById  String?
 
   // Relations
   landlordId    String
-  landlord      User      @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  landlord      User      @relation("Landlord", fields: [landlordId], references: [id], onDelete: Cascade)
   bookings      Booking[]
   reviews       Review[]
   favorites     Favorite[]
   messages      Message[]
+  propertyRequests PropertyRequest[] @relation("PropertyRequestProperty")
+  viewings      Viewing[] @relation("ViewingProperty")
 
   @@map("properties")
 }
@@ -212,6 +221,53 @@ model SiteSetting {
   description String?
 
   @@map("site_settings")
+}
+
+// Property Request model (for tenant requests)
+model PropertyRequest {
+  id            String    @id @default(cuid())
+  type          String    // viewing, interest, application
+  status        String    @default("pending") // pending, approved, declined, cancelled
+  message       String?   // tenant's message
+  preferredDateTime DateTime? // for viewing requests
+  budget        Float?    // tenant's budget for screening
+  seriousness   String?   // low, medium, high (or a score)
+  checkInDate   DateTime? // for application requests
+  checkOutDate  DateTime? // for application requests
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  tenantId      String
+  tenant        User      @relation("PropertyRequestTenant", fields: [tenantId], references: [id])
+  propertyId    String
+  property      Property  @relation("PropertyRequestProperty", fields: [propertyId], references: [id])
+  viewing       Viewing?  @relation("ViewingPropertyRequest")
+
+  @@map("property_requests")
+}
+
+// Viewing model (for scheduled property viewings)
+model Viewing {
+  id            String    @id @default(cuid())
+  scheduledDateTime DateTime
+  status        String    @default("scheduled") // scheduled, completed, cancelled, no_show
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  // Relations
+  propertyRequest PropertyRequest @relation("ViewingPropertyRequest", fields: [propertyRequestId], references: [id])
+  propertyRequestId String @unique
+
+  propertyId      String
+  property        Property      @relation("ViewingProperty", fields: [propertyId], references: [id])
+  tenantId        String
+  tenant          User          @relation("ViewingTenant", fields: [tenantId], references: [id])
+  landlordId      String
+  landlord        User          @relation("ViewingLandlord", fields: [landlordId], references: [id])
+
+  @@map("viewings")
 }
 
 // Landlord Onboarding Application model

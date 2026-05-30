@@ -1,70 +1,126 @@
+import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireAdmin } from '@/lib/rbac';
-import { PrismaClientKnownRequestError } from '@prisma/client/runtime/library';
 
-/** GET /api/admin/properties  — list all properties (admin only) */
 export async function GET(req: NextRequest) {
   try {
-    const check = await requireAdmin();
-    if (!check.ok) return NextResponse.json({ error: check.error }, { status: check.status });
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
 
-    const statusParam = req.nextUrl.searchParams.get('status') || 'all';
+    const { searchParams } = req.nextUrl;
+    const verifiedParam = searchParams.get('verified');
+    const verified = verifiedParam === 'true' ? true : verifiedParam === 'false' ? false : undefined;
 
-    const where: Record<string, boolean> = {};
-    if (statusParam === 'verified') where.verified = true;
-    if (statusParam === 'pending')  where.verified = false;
+    const where: any = {};
+    if (verified !== undefined) {
+      where.verified = verified;
+    }
 
     const properties = await prisma.property.findMany({
       where,
       include: {
-        landlord: { select: { id: true, firstName: true, lastName: true, profileImage: true } },
-        _count:   { select: { bookings: true, reviews: true } },
+        landlord: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImage: true,
+          },
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
 
-    const shaped = properties.map((p) => ({
-      id:             p.id,
-      title:          p.title,
-      location:       p.location,
-      price:          p.price,
-      bedrooms:       p.bedrooms,
-      bathrooms:      p.bathrooms,
-      type:           p.type,
-      status:         p.status,
-      verified:       p.verified,
-      featured:       p.featured,
-      images:         p.images,
-      landlord:       { firstName: p.landlord.firstName, lastName: p.landlord.lastName },
-      bookingsCount:  p._count.bookings,
-      reviewsCount:   p._count.reviews,
-    }));
-
-    return NextResponse.json(shaped);
+    return NextResponse.json(properties);
   } catch (error: any) {
     console.error('[Admin Properties GET]', error);
-    if (error instanceof PrismaClientKnownRequestError) {
-      // Handle known Prisma errors
-      if (error.code === 'P2002') {
-        // Unique constraint violation
-        return NextResponse.json(
-          { error: 'A property with that identifier already exists.' },
-          { status: 400 }
-        );
-      }
-      if (error.code === 'P2025') {
-        // Record not found
-        return NextResponse.json(
-          { error: 'Requested resource not found.' },
-          { status: 404 }
-        );
-      }
-      // Add more error codes as needed
-    }
     return NextResponse.json(
       { error: 'Failed to fetch properties' },
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const { userId } = await auth();
+    if (!userId) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
+    if (!user || user.role !== 'admin') {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+    }
+
+    const { searchParams } = req.nextUrl;
+    const id = searchParams.get('id');
+    if (!id) {
+      return NextResponse.json(
+        { error: 'Property ID is required' },
+        { status: 400 }
+      );
+    }
+
+    const body = await req.json();
+    const { verified, verificationNote } = body;
+
+    // Find the property
+    const property = await prisma.property.findUnique({ where: { id } });
+    if (!property) {
+      return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+    }
+
+    // Update the property
+    const updatedProperty = await prisma.property.update({
+      where: { id },
+      data: {
+        verified: verified ?? property.verified,
+        verifiedAt: verified ? new Date() : null,
+        verifiedById: verified ? user.id : null,
+        // We'll store the verification note in an ActivityLog
+      },
+      include: {
+        landlord: {
+          select: {
+            id: true,
+            firstName: true,
+            lastName: true,
+            profileImage: true,
+          },
+        },
+      },
+    });
+
+    // Log the verification action
+    if (verified !== property.verified) {
+      await prisma.activityLog.create({
+        data: {
+          action: verified ? 'property_verified' : 'property_unverified',
+          description: verificationNote || `Property ${verified ? 'verified' : 'unverified'} by admin`,
+          userId: user.id,
+          metadata: JSON.stringify({
+            propertyId: property.id,
+            propertyTitle: property.title,
+            previousVerified: property.verified,
+            newVerified: verified,
+          }),
+        },
+      });
+    }
+
+    return NextResponse.json(updatedProperty);
+  } catch (error: any) {
+    console.error('[Admin Properties PATCH]', error);
+    return NextResponse.json(
+      { error: 'Failed to update property' },
       { status: 500 }
     );
   }

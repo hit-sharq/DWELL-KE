@@ -67,24 +67,12 @@ export async function GET(req: NextRequest) {
 
 // POST send new message
 export async function POST(req: NextRequest) {
+  // Platform-only policy: tenants must not contact landlords directly.
+  // Tenant support inquiries should go through /api/contact (ContactMessage).
   try {
     const { userId } = await auth();
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const body = await req.json();
-    const {
-      recipientId,
-      propertyId,
-      content,
-    }: { recipientId: string; propertyId?: string; content: string } = body;
-
-    if (!recipientId || !content) {
-      return NextResponse.json(
-        { error: 'Recipient ID and content are required' },
-        { status: 400 }
-      );
     }
 
     const sender = await prisma.user.findUnique({ where: { clerkId: userId } });
@@ -92,43 +80,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const recipient = await prisma.user.findUnique({
-      where: { id: recipientId },
-    });
-    if (!recipient) {
-      return NextResponse.json({ error: 'Recipient not found' }, { status: 404 });
+    // Enforce platform-only contact for tenants.
+    // Tenants must not contact landlords directly.
+    if (sender.role === 'tenant') {
+      return NextResponse.json(
+        {
+          error: 'Direct messaging is disabled. Please use Contact Support from your dashboard.',
+          redirectTo: '/dashboard/tenant/messages',
+        },
+        { status: 403 }
+      );
     }
 
-    const message = await prisma.message.create({
-      data: {
-        senderId: sender.id,
-        recipientId,
-        propertyId,
-        content,
-      },
-      include: {
-        sender: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImage: true,
-          },
-        },
-        property: {
-          select: {
-            id: true,
-            title: true,
-          },
-        },
-      },
-    });
-
-    return NextResponse.json(message, { status: 201 });
+    // For admins/landlords, messaging can be mediated by platform.
+    // Until a dedicated mediation layer is implemented, disallow direct messaging entirely.
+    return NextResponse.json(
+      { error: 'Direct messaging is disabled in this environment.' },
+      { status: 403 }
+    );
   } catch (error: any) {
     console.error('[Messages POST]', error);
     return NextResponse.json(
-      { error: 'Failed to send message' },
+      { error: 'Failed to process request' },
       { status: 500 }
     );
   }

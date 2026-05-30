@@ -76,16 +76,38 @@ export default function BecomeLandlordPage() {
     leaseTemplate: { file: null, url: null, uploading: false, error: null },
   });
 
-  // Pre-fill user data when loaded
-  useEffect(() => {
-    if (user) {
-      setFormData(prev => ({
-        ...prev,
-        fullName: user.fullName || '',
-        email: user.primaryEmailAddress?.emailAddress || '',
-      }));
-    }
-  }, [user]);
+   // Pre-fill user data when loaded
+   useEffect(() => {
+     if (user) {
+       setFormData(prev => ({
+         ...prev,
+         fullName: user.fullName || '',
+         email: user.primaryEmailAddress?.emailAddress || '',
+       }));
+     }
+   }, [user]);
+
+   // Redirect to landlord dashboard if already approved as landlord
+   useEffect(() => {
+     if (user && isLoaded) {
+       const checkApplicationStatus = async () => {
+         try {
+           const res = await fetch('/api/landlord/application-status');
+           if (res.ok) {
+             const data = await res.json();
+             if (data.status === 'approved') {
+               // Redirect to landlord dashboard
+               router.push('/dashboard/landlord');
+             }
+           }
+         } catch (err) {
+           console.error('Failed to check application status:', err);
+         }
+       };
+
+       checkApplicationStatus();
+     }
+   }, [user, isLoaded, router]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;

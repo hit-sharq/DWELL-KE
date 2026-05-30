@@ -325,9 +325,8 @@ export default function LandlordBookingsPage() {
 
                     {booking.status === 'confirmed' && (
                       <>
-                        <button className="px-4 py-2 bg-blue-500/20 border border-blue-500/50 text-blue-400 rounded-lg hover:bg-blue-500/30 transition-colors text-sm font-semibold">
-                          Message Guest
-                        </button>
+                        {/* Tenants should only know the platform.
+                            Landlords must not provide direct messaging. */}
                         <button
                           onClick={() => handleRejectBooking(booking.id)}
                           disabled={updatingId === booking.id}
