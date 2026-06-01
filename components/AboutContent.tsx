@@ -218,6 +218,9 @@ export function AboutContent({ FEATURES }: AboutContentProps) {
             Every feature, every process, every decision is driven by real experiences. We don&apos;t just
             connect tenants and landlords; we build trust through verification, transparency, and technology.
           </p>
+          <p className="leading-relaxed">
+            Are you a property owner? <Link href="/become-landlord" className="text-cyan-400 hover:text-cyan-300 underline underline-offset-4">Apply to become a verified landlord</Link> and start listing your properties today.
+          </p>
         </div>
 
         <div className="pt-4">

@@ -32,12 +32,7 @@ export async function POST(req: NextRequest) {
 
       if (!existingUser) {
         const adminClerkIds = process.env.NEXT_PUBLIC_ADMIN_CLERK_IDS?.split(',') || [];
-        const clerkRoleFromMetadata =
-          evt.data.public_metadata?.role || evt.data.private_metadata?.role;
-
-        const role = adminClerkIds.includes(clerkId)
-          ? 'admin'
-          : (clerkRoleFromMetadata || 'tenant');
+        const role = adminClerkIds.includes(clerkId) ? 'admin' : 'tenant';
 
         await prisma.user.create({
           data: {

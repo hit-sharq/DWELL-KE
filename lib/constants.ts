@@ -38,6 +38,7 @@ export const NAV_LINKS = [
   { label: "Home", href: "/" },
   { label: "Marketplace", href: "/marketplace" },
   { label: "About", href: "/about" },
+  { label: "For Landlords", href: "/become-landlord" },
   { label: "Contact", href: "/contact" },
 ];
 

@@ -29,7 +29,6 @@ export default function TenantProfilePage() {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isUpdatingRole, setIsUpdatingRole] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
 
@@ -68,28 +67,8 @@ export default function TenantProfilePage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleRoleChange = async () => {
-    if (!profile) return;
-    const newRole = profile.role === 'tenant' ? 'landlord' : 'tenant';
-    setIsUpdatingRole(true);
-    try {
-      const response = await fetch('/api/users', {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ role: newRole }),
-      });
-      if (!response.ok) throw new Error('Failed to update role');
-      setSuccess(`Role updated to ${newRole}`);
-      fetchProfile();
-      // Redirect to appropriate dashboard after role change
-      setTimeout(() => {
-        window.location.href = `/dashboard/${newRole}`;
-      }, 1000);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update role');
-    } finally {
-      setIsUpdatingRole(false);
-    }
+  const handleBecomeLandlord = () => {
+    window.location.href = '/become-landlord';
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -188,40 +167,28 @@ export default function TenantProfilePage() {
                    </div>
                  </div>
 
-                 {/* Role Switcher */}
-                 <div className="border-t border-slate-700 pt-6">
-                   <label className="block text-sm font-medium text-gray-300 mb-3">
-                     Account Type
-                   </label>
-                   <div className="flex items-center gap-3">
-                     <span className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                       profile.role === 'tenant' 
-                         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50' 
-                         : 'bg-slate-800 text-gray-400 hover:bg-slate-700 cursor-pointer'
-                     }`}>
-                       Tenant
-                     </span>
-                     <button
-                       onClick={handleRoleChange}
-                       disabled={isUpdatingRole}
-                       className="w-12 h-6 rounded-full bg-slate-700 relative transition-colors disabled:opacity-50"
-                     >
-                       <div className={`w-5 h-5 rounded-full bg-cyan-400 absolute top-0.5 transition-transform ${
-                         profile.role === 'landlord' ? 'translate-x-6' : 'translate-x-0.5'
-                       }`} />
-                     </button>
-                     <span className={`px-4 py-2 rounded-lg text-sm font-medium ${
-                       profile.role === 'landlord' 
-                         ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/50' 
-                         : 'bg-slate-800 text-gray-400 hover:bg-slate-700 cursor-pointer'
-                     }`}>
-                       Landlord
-                     </span>
-                   </div>
-                   <p className="text-gray-500 text-xs mt-2">
-                     Switch between tenant and landlord modes. You'll be redirected after changing.
-                   </p>
-                 </div>
+                  {/* Become a Landlord CTA */}
+                  <div className="border-t border-slate-700 pt-6">
+                    <label className="block text-sm font-medium text-gray-300 mb-3">
+                      Account Type
+                    </label>
+                    <div className="p-4 rounded-xl bg-slate-800/60 border border-slate-700">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-white font-medium">Current: Tenant</p>
+                          <p className="text-gray-400 text-sm">
+                            Want to list properties? Apply to become a landlord.
+                          </p>
+                        </div>
+                        <button
+                          onClick={handleBecomeLandlord}
+                          className="px-4 py-2 rounded-lg bg-gradient-to-r from-cyan-500 to-blue-600 text-white font-semibold hover:shadow-[0_0_22px_-4px_rgba(34,211,238,0.45)] transition-all"
+                        >
+                          Apply Now
+                        </button>
+                      </div>
+                    </div>
+                  </div>
 
                 {/* Form Fields */}
                 <div className="grid md:grid-cols-2 gap-6">

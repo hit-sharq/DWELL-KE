@@ -3,8 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
-import { PremiumButton } from '@/components/PremiumButton';
-import { GlassmorphicCard } from '@/components/GlassmorphicCard';
+import { PremiumButton } from '@/components/PremiumButton';import { GlassmorphicCard } from '@/components/GlassmorphicCard';
 
 type StatsApiResponse = {
   stats: Array<{ label: string; value: string; trend: string | null }>;
@@ -123,21 +122,20 @@ export default function AdminAnalyticsPage() {
                   <h2 className="text-xl font-bold text-white mb-4">Recent Users</h2>
                   <div className="space-y-3">
                     {analytics.recentUsers.map((user) => (
-
-                      <div key={user.id} className="p-3 rounded-lg bg-slate-900/40 border border-white/[0.04]">
-                        <p className="text-white font-medium">
-                          {user.firstName} {user.lastName}
-                        </p>
-                        <p className="text-xs text-gray-400">{user.email}</p>
-                        <span className={`text-[10px] px-2 py-0.5 rounded-full ${
-                          user.role === 'landlord' ? 'bg-cyan-500/20 text-cyan-400' :
-                          user.role === 'tenant' ? 'bg-blue-500/20 text-blue-400' :
-                          'bg-purple-500/20 text-purple-400'
-                        }`}>
-                          {user.role}
-                        </span>
-                      </div>
-                    ))}
+                    <div key={user.id} className="p-3 rounded-lg bg-slate-900/40 border border-white/[0.04]">
+                      <p className="text-white font-medium">
+                        {user.name}
+                      </p>
+                      <p className="text-xs text-gray-400">{user.email}</p>
+                      <span className={`text-[10px] px-2 py-0.5 rounded-full ${
+                        user.role === 'landlord' ? 'bg-cyan-500/20 text-cyan-400' :
+                        user.role === 'tenant' ? 'bg-blue-500/20 text-blue-400' :
+                        'bg-purple-500/20 text-purple-400'
+                      }`}>
+                        {user.role}
+                      </span>
+                    </div>
+                  ))}
                   </div>
                 </GlassmorphicCard>
 
@@ -145,15 +143,15 @@ export default function AdminAnalyticsPage() {
                 <GlassmorphicCard>
                   <h2 className="text-xl font-bold text-white mb-4">Recent Bookings</h2>
                   <div className="space-y-3">
-                    {analytics.recentBookings.map((booking) => (
-                      <div key={booking.id} className="p-3 rounded-lg bg-slate-900/40 border border-white/[0.04]">
-                        <p className="text-white font-medium">{booking.property.title}</p>
-                        <p className="text-xs text-gray-400">
-                          {booking.tenant.firstName} {booking.tenant.lastName}
-                        </p>
-                        <p className="text-cyan-400 text-sm">KES {booking.totalPrice.toLocaleString()}</p>
-                      </div>
-                    ))}
+                  {analytics.recentBookings.map((booking) => (
+                    <div key={booking.id} className="p-3 rounded-lg bg-slate-900/40 border border-white/[0.04]">
+                      <p className="text-white font-medium">{booking.property}</p>
+                      <p className="text-xs text-gray-400">
+                        {booking.tenant}
+                      </p>
+                      <p className="text-cyan-400 text-sm">{booking.amount}</p>
+                    </div>
+                  ))}
                   </div>
                 </GlassmorphicCard>
 

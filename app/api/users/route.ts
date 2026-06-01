@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
           firstName:   user.firstName || '',
           lastName:    user.lastName || '',
           profileImage: user.imageUrl || '',
-          role: (user.privateMetadata?.role ?? user.publicMetadata?.role ?? 'tenant') as string,
+          role: 'tenant',
         },
       });
     }
@@ -109,9 +109,8 @@ export async function PUT(req: NextRequest) {
 }
 
 // POST create or sync user with Clerk.
-// Accepts an optional { role } in the body. When provided and the user is newly
-// created the role is persisted to both the DB and Clerk's user metadata so
-// the webhook (if enabled) will read it back with the correct value.
+// All new users are created as `tenant`. The only path to `landlord` or
+// `admin` is through the official onboarding and admin approval flows.
 export async function POST(req: NextRequest) {
   try {
     const user = await currentUser();
@@ -126,21 +125,10 @@ export async function POST(req: NextRequest) {
       where: { clerkId: user.id },
     });
 
-    const VALID_ROLES: Role[] = ['tenant', 'landlord', 'admin'];
-    const rawRole = body.role || 'tenant';
-    const role = VALID_ROLES.includes(rawRole as Role) ? rawRole : 'tenant';
-
-    // If the user exists, update the role (so re-signup / role switch works)
     if (existingUser) {
-      const updated = await prisma.user.update({
-        where: { clerkId: user.id },
-        data: { role },
-      });
-
-      return NextResponse.json(updated, { status: 200 });
+      return NextResponse.json(existingUser, { status: 200 });
     }
 
-    // Create new user
     const newUser = await prisma.user.create({
       data: {
         clerkId: user.id,
@@ -148,17 +136,9 @@ export async function POST(req: NextRequest) {
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         profileImage: user.imageUrl || '',
-        role,
+        role: 'tenant',
       },
     });
-
-    // Promote the initial role into Clerk's immutable user metadata so any
-    // future webhook delivery reads the authoritative value.
-    try {
-      await (user as any).unsafeMetadata?.({ role });
-    } catch {
-      // non-blocking: metadata may not be writable by this token
-    }
 
     return NextResponse.json(newUser, { status: 201 });
   } catch (error: any) {

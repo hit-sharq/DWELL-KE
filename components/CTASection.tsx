@@ -132,27 +132,32 @@ export function CTASection() {
                 </p>
               </div>
 
-              {/* ─ Right CTAs ─ */}
-              <div className="flex flex-wrap gap-4 justify-center lg:justify-end">
-                <Link href="/marketplace" className="group/btn">
-                  <PremiumButton variant="solid" size="lg" className="
-                    relative overflow-hidden min-w-[220px] font-semibold
-                    shadow-[0_0_28px_-6px_rgba(34,211,238,0.4)]
-                    hover:shadow-[0_0_52px_-10px_rgba(34,211,238,0.6)]
-                  ">
-                    Browse Properties
-                    {/* Shine */}
-                    <span className="pointer-events-none absolute inset-0
-                      bg-gradient-to-r from-transparent via-white/15 to-transparent
-                      translate-x-[-120%] group-hover/btn:translate-x-[220%] transition-all duration-700 ease-in-out" />
-                  </PremiumButton>
-                </Link>
-                <Link href="/auth/signup">
-                  <PremiumButton variant="outline" size="lg" className="min-w-[200px]">
-                    Get Started &rarr;
-                  </PremiumButton>
-                </Link>
-              </div>
+               {/* ─ Right CTAs ─ */}
+               <div className="flex flex-wrap gap-4 justify-center lg:justify-end">
+                 <Link href="/marketplace" className="group/btn">
+                   <PremiumButton variant="solid" size="lg" className="
+                     relative overflow-hidden min-w-[220px] font-semibold
+                     shadow-[0_0_28px_-6px_rgba(34,211,238,0.4)]
+                     hover:shadow-[0_0_52px_-10px_rgba(34,211,238,0.6)]
+                   ">
+                     Browse Properties
+                     {/* Shine */}
+                     <span className="pointer-events-none absolute inset-0
+                       bg-gradient-to-r from-transparent via-white/15 to-transparent
+                       translate-x-[-120%] group-hover/btn:translate-x-[220%] transition-all duration-700 ease-in-out" />
+                   </PremiumButton>
+                 </Link>
+                 <Link href="/auth/signup">
+                   <PremiumButton variant="outline" size="lg" className="min-w-[200px]">
+                     Get Started &rarr;
+                   </PremiumButton>
+                 </Link>
+                 <Link href="/become-landlord">
+                   <PremiumButton variant="ghost" size="lg" className="min-w-[200px] text-cyan-300 hover:text-cyan-200">
+                     List Your Property &rarr;
+                   </PremiumButton>
+                 </Link>
+               </div>
             </div>
 
             {/* ─ Trust stats bar (bottom) ─ */}
