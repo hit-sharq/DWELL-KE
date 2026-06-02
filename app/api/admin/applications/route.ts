@@ -1,10 +1,9 @@
-import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { isAdminUser } from '@/lib/admin';
 import { sendEmail, getLandlordApprovalEmail, getLandlordDenialEmail } from '@/lib/email';
+import { NextRequest, NextResponse } from 'next/server';
 
-// GET: Fetch all landlord applications (admin only)
 export async function GET(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -48,7 +47,6 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT: Review application (approve/deny)
 export async function PUT(request: NextRequest) {
   try {
     const { userId } = await auth();
@@ -80,7 +78,6 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Fetch the application
     const application = await prisma.landlordApplication.findUnique({
       where: { id: applicationId },
     });
@@ -101,7 +98,6 @@ export async function PUT(request: NextRequest) {
 
     const newStatus = action === 'approve' ? 'approved' : 'denied';
 
-    // Update application
     const updatedApplication = await prisma.landlordApplication.update({
       where: { id: applicationId },
       data: {
@@ -113,7 +109,6 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    // If approved, update user role to landlord
     if (action === 'approve') {
       await prisma.user.update({
         where: { id: application.userId },
@@ -121,7 +116,6 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    // Send email notification
     try {
       const emailContent = action === 'approve'
         ? getLandlordApprovalEmail(application.fullName)
@@ -134,7 +128,6 @@ export async function PUT(request: NextRequest) {
       });
     } catch (emailError) {
       console.error('Failed to send email notification:', emailError);
-      // Don't fail the request if email fails
     }
 
     return NextResponse.json({

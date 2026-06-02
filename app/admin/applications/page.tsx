@@ -116,7 +116,7 @@ export default function AdminApplicationsPage() {
       setPagination(data.pagination);
     } catch (error) {
       console.error('Error fetching applications:', error);
-      showError(error, 'Failed to load applications');
+      showError('Failed to load applications');
     } finally {
       setLoading(false);
     }
@@ -164,7 +164,7 @@ export default function AdminApplicationsPage() {
       setDenialReason('');
     } catch (error) {
       console.error('Error reviewing application:', error);
-      showError(error, 'Failed to process application');
+      showError('Failed to process application');
     } finally {
       setSubmitting(false);
     }

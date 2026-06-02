@@ -1,5 +1,6 @@
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import { sanitize, validateLength } from '@/lib/sanitize';
 import { NextRequest, NextResponse } from 'next/server';
 
 // GET current user profile
@@ -69,6 +70,13 @@ export async function PUT(req: NextRequest) {
       profileImage?: string;
     } = body;
 
+    if (firstName !== undefined && validateLength.short(firstName, 50)) {
+      return NextResponse.json({ error: 'First name must be 50 characters or less' }, { status: 400 });
+    }
+    if (lastName !== undefined && validateLength.short(lastName, 50)) {
+      return NextResponse.json({ error: 'Last name must be 50 characters or less' }, { status: 400 });
+    }
+
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
@@ -77,10 +85,10 @@ export async function PUT(req: NextRequest) {
     const updated = await prisma.user.update({
       where: { clerkId: userId },
       data: {
-        ...(firstName !== undefined && { firstName }),
-        ...(lastName !== undefined && { lastName }),
-        ...(phoneNumber !== undefined && { phoneNumber }),
-        ...(profileImage !== undefined && { profileImage }),
+        ...(firstName !== undefined && { firstName: sanitize.plain(firstName) }),
+        ...(lastName !== undefined && { lastName: sanitize.plain(lastName) }),
+        ...(phoneNumber !== undefined && { phoneNumber: sanitize.plain(phoneNumber) }),
+        ...(profileImage !== undefined && { profileImage: sanitize.plain(profileImage) }),
       },
     });
 

@@ -138,8 +138,8 @@ CLOUDINARY_API_SECRET=your_api_secret
 NEXT_PUBLIC_PESAPAL_CONSUMER_KEY=your_consumer_key
 NEXT_PUBLIC_PESAPAL_CONSUMER_SECRET=your_consumer_secret
 
-# Admin Configuration
-NEXT_PUBLIC_ADMIN_CLERK_IDS=admin_clerk_id_1,admin_clerk_id_2
+# Admin Configuration (server-only)
+ADMIN_CLERK_IDS=admin_clerk_id_1,admin_clerk_id_2
 
 # Webhook Security
 CLERK_WEBHOOK_SECRET=your_webhook_secret

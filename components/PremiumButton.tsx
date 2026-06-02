@@ -1,7 +1,6 @@
-'use client';
-
-import React from 'react';
+import React, { forwardRef } from 'react';
 import { cn } from '@/lib/utils';
+import { Slot } from '@radix-ui/react-slot';
 
 type ButtonVariant = 'solid' | 'outline' | 'ghost';
 
@@ -9,23 +8,21 @@ interface PremiumButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElemen
   variant?: ButtonVariant;
   size?: 'sm' | 'md' | 'lg';
   children: React.ReactNode;
+  asChild?: boolean;
 }
 
-/* ─────────────────────────────────────
-   PREMIUM BUTTON — Luxury Glow Button
-   Cinematic gradient + glow states
-───────────────────────────────────── */
-export function PremiumButton({
+export const PremiumButton = forwardRef<HTMLButtonElement, PremiumButtonProps>(function PremiumButton({
   variant = 'solid',
   size = 'md',
   className,
   children,
-  asChild: _asChild,          // accepted but intentionally stripped — slot rendering not needed here
+  asChild = false,
   ...props
-}: PremiumButtonProps) {
+}, ref) {
+  const Comp = asChild ? Slot : 'button';
   const base =
-    'relative overflow-hidden font-medium tracking-wide cursor-pointer rounded-xl ' +
-    'transition-all duration-300 ease-out';
+    (asChild ? '' : 'relative overflow-hidden font-medium tracking-wide cursor-pointer rounded-xl transition-all duration-300 ease-out ') +
+    'font-medium tracking-wide rounded-xl transition-all duration-300 ease-out';
 
   const sizes = {
     sm: 'px-4 py-2 text-[11px] uppercase tracking-[0.18em]',
@@ -56,11 +53,12 @@ export function PremiumButton({
   };
 
   return (
-    <button
+    <Comp
+      ref={ref}
       className={cn(base, sizes[size], variants[variant], className)}
       {...props}
     >
       {children}
-    </button>
+    </Comp>
   );
-}
+});

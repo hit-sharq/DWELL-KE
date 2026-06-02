@@ -30,7 +30,7 @@ export async function requireAdmin() {
   const { userId } = await auth();
   if (!userId) return { ok: false as const, status: 401, error: 'Unauthorized' };
 
-  const adminClerkIds = process.env.NEXT_PUBLIC_ADMIN_CLERK_IDS?.split(',') || [];
+  const adminClerkIds = process.env.ADMIN_CLERK_IDS?.split(',') || [];
   if (adminClerkIds.includes(userId.trim())) {
     return { ok: true as const, status: 200, user: undefined };
   }

@@ -4,6 +4,14 @@ import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
+  const webhookSecret = process.env.CLERK_WEBHOOK_SECRET;
+  if (!webhookSecret) {
+    return NextResponse.json(
+      { error: 'Webhook secret not configured' },
+      { status: 500 }
+    );
+  }
+
   try {
     const payload = await req.json();
     const hdrs = await headers();
@@ -11,8 +19,7 @@ export async function POST(req: NextRequest) {
     const svixTimestamp = hdrs.get('svix-timestamp') || '';
     const svixSignature = hdrs.get('svix-signature') || '';
 
-    // Verify webhook signature
-    const wh = new Webhook(process.env.CLERK_WEBHOOK_SECRET || '');
+    const wh = new Webhook(webhookSecret);
     const evt = wh.verify(JSON.stringify(payload), {
       'svix-id': svixId,
       'svix-timestamp': svixTimestamp,
@@ -31,7 +38,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (!existingUser) {
-        const adminClerkIds = process.env.NEXT_PUBLIC_ADMIN_CLERK_IDS?.split(',') || [];
+        const adminClerkIds = process.env.ADMIN_CLERK_IDS?.split(',') || [];
         const role = adminClerkIds.includes(clerkId) ? 'admin' : 'tenant';
 
         await prisma.user.create({
@@ -50,15 +57,11 @@ export async function POST(req: NextRequest) {
       }
     }
 
-
     if (evt.type === 'user.deleted') {
       const clerkId = evt.data.id;
-
-      // Delete user and cascade delete related data
       await prisma.user.delete({
         where: { clerkId },
       });
-
       console.log(`[Webhook] User deleted: ${clerkId}`);
     }
 
@@ -73,8 +76,7 @@ export async function POST(req: NextRequest) {
       });
 
       if (existingUser) {
-        // Determine if user should be an admin based on clerk ID list
-        const adminClerkIds = process.env.NEXT_PUBLIC_ADMIN_CLERK_IDS?.split(',') || [];
+        const adminClerkIds = process.env.ADMIN_CLERK_IDS?.split(',') || [];
         const isAdmin = adminClerkIds.includes(clerkId);
         
         await prisma.user.update({
@@ -83,7 +85,7 @@ export async function POST(req: NextRequest) {
             firstName,
             lastName,
             profileImage: imageUrl,
-            role: isAdmin ? 'admin' : existingUser.role, // Only change to admin if in list, otherwise keep existing role
+            role: isAdmin ? 'admin' : existingUser.role,
           },
         });
 

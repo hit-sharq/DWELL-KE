@@ -1,11 +1,9 @@
-export function showError(message: string) {
-  console.error('Error:', message);
-  // In a real app, this might show a toast notification or update state
+export function showError(message?: string | unknown) {
+  console.error('Error:', typeof message === 'string' ? message : message instanceof Error ? message.message : 'Unknown error');
   return false;
 }
 
-export function showSuccess(message: string) {
+export function showSuccess(message?: string) {
   console.log('Success:', message);
-  // In a real app, this might show a toast notification or update state
   return true;
 }
