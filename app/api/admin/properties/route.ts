@@ -1,6 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
+import { isAdminUser } from '@/lib/admin';
 
 export async function GET(req: NextRequest) {
   try {
@@ -9,14 +10,18 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const isEnvAdmin = isAdminUser(userId);
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
-    if (!user || user.role !== 'admin') {
+    const isAdmin = isEnvAdmin || (user?.role === 'admin');
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const { searchParams } = req.nextUrl;
+    const statusParam = searchParams.get('status');
     const verifiedParam = searchParams.get('verified');
-    const verified = verifiedParam === 'true' ? true : verifiedParam === 'false' ? false : undefined;
+    const status = statusParam === 'verified' ? true : statusParam === 'pending' ? false : undefined;
+    const verified = verifiedParam === 'true' ? true : verifiedParam === 'false' ? false : status;
 
     const where: any = {};
     if (verified !== undefined) {
@@ -55,8 +60,10 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
+    const isEnvAdmin = isAdminUser(userId);
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
-    if (!user || user.role !== 'admin') {
+    const isAdmin = isEnvAdmin || (user?.role === 'admin');
+    if (!isAdmin) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
@@ -78,14 +85,13 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Property not found' }, { status: 404 });
     }
 
-    // Update the property
+    // Update the property (verifiedById only set if user exists in DB)
     const updatedProperty = await prisma.property.update({
       where: { id },
       data: {
         verified: verified ?? property.verified,
         verifiedAt: verified ? new Date() : null,
-        verifiedById: verified ? user.id : null,
-        // We'll store the verification note in an ActivityLog
+        verifiedById: verified && user?.id ? user.id : null,
       },
       include: {
         landlord: {
@@ -99,8 +105,8 @@ export async function PATCH(req: NextRequest) {
       },
     });
 
-    // Log the verification action
-    if (verified !== property.verified) {
+    // Log the verification action (only if user exists in DB)
+    if (verified !== property.verified && user?.id) {
       await prisma.activityLog.create({
         data: {
           action: verified ? 'property_verified' : 'property_unverified',

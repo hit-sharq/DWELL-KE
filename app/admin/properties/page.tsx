@@ -38,7 +38,7 @@ export default function AdminPropertiesPage() {
       setError(null);
       try {
         const params = new URLSearchParams();
-        if (statusFilter !== 'all') params.append('status', statusFilter);
+        if (statusFilter !== 'all') params.append('verified', statusFilter === 'verified' ? 'true' : 'false');
         const res = await fetch(`/api/admin/properties?${params}`);
         if (!res.ok) {
           const errorData = await res.json();
