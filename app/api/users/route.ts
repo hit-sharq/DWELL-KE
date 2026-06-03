@@ -34,7 +34,7 @@ export async function GET(req: NextRequest) {
           firstName:   user.firstName || '',
           lastName:    user.lastName || '',
           profileImage: user.imageUrl || '',
-          role: 'tenant',
+          role: isAdminUser(userId) ? 'admin' : 'tenant',
         },
       });
     }
@@ -136,7 +136,7 @@ export async function POST(req: NextRequest) {
         firstName: user.firstName || '',
         lastName: user.lastName || '',
         profileImage: user.imageUrl || '',
-        role: 'tenant',
+        role: isAdminUser(user.id) ? 'admin' : 'tenant',
       },
     });
 

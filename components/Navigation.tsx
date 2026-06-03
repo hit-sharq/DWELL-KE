@@ -6,7 +6,6 @@ import { motion, useMotionValue, useTransform } from 'framer-motion';
 import { useClerk, useUser } from '@clerk/nextjs';
 import { Menu } from 'lucide-react';
 import { NAV_LINKS, BRAND } from '@/lib/constants';
-import { isAdminUser } from '@/lib/admin';
 import { PremiumButton } from './PremiumButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
@@ -14,10 +13,10 @@ import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/s
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [userRole, setUserRole] = useState<'tenant' | 'landlord' | null>(null);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   const { user, isLoaded } = useUser();
   const { signOut } = useClerk();
-  const adminStatus = user ? isAdminUser(user.id) : false;
 
   const mx = useMotionValue(0.5);
 
@@ -39,23 +38,37 @@ export function Navigation() {
   useEffect(() => {
     if (!isLoaded || !user) {
       setUserRole(null);
+      setIsAdmin(false);
       return;
     }
 
-    const fetchRole = async () => {
+    const fetchRoles = async () => {
       try {
+        // Admin tab should be driven by the same source of truth as the server:
+        // ADMIN_CLERK_IDS -> /api/admin/status
+        const adminRes = await fetch('/api/admin/status');
+        if (adminRes.ok) {
+          const adminData = await adminRes.json();
+          setIsAdmin(Boolean(adminData.isAdmin));
+        }
+
+        // Dashboard link (tenant vs landlord) still uses DB role.
         const res = await fetch('/api/users');
         if (res.ok) {
           const data = await res.json();
           setUserRole(data.role);
+        } else {
+          setUserRole('tenant');
         }
       } catch {
         setUserRole('tenant');
+        setIsAdmin(false);
       }
     };
 
-    fetchRole();
+    fetchRoles();
   }, [isLoaded, user]);
+
 
   const isLandlord = userRole === 'landlord';
   const isMobile = useIsMobile();
@@ -147,7 +160,7 @@ export function Navigation() {
                   <div className="flex flex-col gap-2">
                     {isLoaded && user ? (
                       <>
-                        {adminStatus && (
+{isAdmin && (
                           <Link href="/admin" onClick={() => setMobileOpen(false)}>
                             <PremiumButton variant="ghost" size="sm" className="w-full justify-center">
                               Admin
@@ -225,13 +238,13 @@ export function Navigation() {
           <div className="hidden sm:flex items-center gap-2.5">
             {isLoaded && user ? (
               <>
-                {adminStatus && (
-                  <Link href="/admin">
-                    <PremiumButton variant="ghost" size="sm">
-                      Admin
-                    </PremiumButton>
-                  </Link>
-                )}
+{isAdmin && (
+                   <Link href="/admin">
+                     <PremiumButton variant="ghost" size="sm">
+                       Admin
+                     </PremiumButton>
+                   </Link>
+                 )}
                 <Link href={isLandlord ? '/dashboard/landlord' : '/dashboard/tenant'}>
                   <PremiumButton variant="ghost" size="sm">
                     Dashboard

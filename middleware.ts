@@ -13,7 +13,7 @@ const securityHeaders = {
 
 const cspDirectives = [
   "default-src 'self'",
-  "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://clerk.dwell-ke.vercel.app",
+  "script-src 'self' https://*.clerk.accounts.dev https://clerk.dwell-ke.vercel.app", 
   "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
   "font-src 'self' https://fonts.gstatic.com",
   "img-src 'self' data: blob: https://res.cloudinary.com https://*.cloudinary.com https://*.cloudfront.net",

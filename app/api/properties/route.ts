@@ -16,7 +16,7 @@ export async function GET(req: NextRequest) {
 
     const { userId } = await auth();
     const user = userId ? await prisma.user.findUnique({ where: { clerkId: userId } }) : null;
-    const isAdmin = user ? user.role === 'admin' : false;
+    const isAdmin = user ? isAdminUser(userId) : false;
     const userLandlordId = user && user.role === 'landlord' ? user.id : null;
 
     const accessWhere: any = {};
@@ -106,12 +106,14 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      if (user.role !== 'landlord' && user.role !== 'admin') {
+      const isAdminByEnv = isAdminUser(userId);
+      if (user.role !== 'landlord' && !isAdminByEnv) {
         return NextResponse.json(
           { error: 'Forbidden – only landlords and admins can create properties' },
           { status: 403 }
         );
       }
+
 
       const requiredFields = ['title', 'description', 'location', 'price', 'bedrooms', 'bathrooms', 'type'];
       for (const field of requiredFields) {
