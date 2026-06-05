@@ -42,21 +42,29 @@ export function Navigation() {
       return;
     }
 
-    const fetchRoles = async () => {
+const fetchRoles = async () => {
       try {
         // Admin tab should be driven by the same source of truth as the server:
         // ADMIN_CLERK_IDS -> /api/admin/status
         const adminRes = await fetch('/api/admin/status');
         if (adminRes.ok) {
-          const adminData = await adminRes.json();
-          setIsAdmin(Boolean(adminData.isAdmin));
+          try {
+            const adminData = await adminRes.json();
+            setIsAdmin(Boolean(adminData.isAdmin));
+          } catch {
+            setIsAdmin(false);
+          }
         }
 
         // Dashboard link (tenant vs landlord) still uses DB role.
         const res = await fetch('/api/users');
         if (res.ok) {
-          const data = await res.json();
-          setUserRole(data.role);
+          try {
+            const data = await res.json();
+            setUserRole(data.role);
+          } catch {
+            setUserRole('tenant');
+          }
         } else {
           setUserRole('tenant');
         }

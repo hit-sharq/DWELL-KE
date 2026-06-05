@@ -31,6 +31,8 @@ export default function MarketplacePage() {
   const [filteredProperties, setFilteredProperties] = useState<Property[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activePropertyId, setActivePropertyId] = useState<string | null>(null);
+
 
   // Filter states
   const [searchQuery, setSearchQuery] = useState('');
@@ -47,14 +49,18 @@ export default function MarketplacePage() {
         setIsLoading(true);
         setError(null);
         const response = await fetch('/api/properties');
+
+        // Read the response body exactly once.
+        const payload: any = await response.json().catch(() => null);
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'Failed to fetch properties');
+          throw new Error(payload?.error || `Server error (${response.status})`);
         }
 
-        const data = await response.json();
+        const data = payload;
         setProperties(data);
         setFilteredProperties(data);
+
       } catch (err) {
         setError(
           err instanceof Error ? err.message : 'Failed to load properties'
@@ -285,7 +291,12 @@ export default function MarketplacePage() {
 
                 <div className="grid md:grid-cols-2 gap-6">
                   {filteredProperties.map((property, idx) => (
-                    <Link key={property.id} href={`/properties/${property.id}`}>
+                    <Link
+                      key={property.id}
+                      href={`/properties/${property.id}`}
+                      onClick={() => setActivePropertyId(property.id)}
+                    >
+
                       <motion.div
                         variants={staggerItem}
                         className="cursor-pointer group"
@@ -357,7 +368,7 @@ export default function MarketplacePage() {
                               </div>
                             )}
 
-                            {/* Spacer */}
+o                            {/* Spacer */}
                             <div className="flex-1" />
 
                             {/* Footer */}
@@ -368,9 +379,13 @@ export default function MarketplacePage() {
                                 </div>
                                 <div className="text-xs text-gray-500">/month</div>
                               </div>
-                              <button className="px-4 py-2 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm font-semibold">
-                                View Details
+                              <button
+                                className="px-4 py-2 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm font-semibold disabled:opacity-70 disabled:cursor-not-allowed"
+                                disabled={activePropertyId === property.id}
+                              >
+                                {activePropertyId === property.id ? 'Loading…' : 'View Details'}
                               </button>
+
                             </div>
                           </div>
                         </div>

@@ -1,7 +1,5 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
-import { requireRole } from '@/lib/rbac';
-
 
 /** GET /api/properties/[id] — single property with landlord, reviews, and confirmed bookings */
 export async function GET(
@@ -15,14 +13,6 @@ export async function GET(
     }
 
     // Public property details are allowed, but only verified listings expose reviews/bookings.
-    // Admins can always view full detail.
-    const roleCheck = await requireRole(['tenant', 'landlord', 'admin']).catch(() => null);
-    // If not authenticated, treat as tenant.
-    const role = (roleCheck && 'user' in roleCheck && roleCheck.user?.role) ? (roleCheck.user.role as any) : null;
-
-    const isAdmin = role === 'admin';
-    const canViewUnverifiedExtras = isAdmin;
-
     const property = await prisma.property.findUnique({
       where: { id },
       include: {

@@ -8,10 +8,16 @@ type Role = 'tenant' | 'landlord' | 'admin';
 // GET current user or auto-create if missing (server-side role source of truth)
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await auth();
+    let userId: string | null = null;
+    try {
+      const authResult = await auth();
+      userId = authResult.userId;
+    } catch {
+      return NextResponse.json({ error: 'Unauthorized', role: 'tenant' }, { status: 200 });
+    }
 
     if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return NextResponse.json({ error: 'Unauthorized', role: 'tenant' }, { status: 200 });
     }
 
     let dbUser = await prisma.user.findUnique({
@@ -23,27 +29,40 @@ export async function GET(req: NextRequest) {
     // because the clerk webhook fires asynchronously and may not yet have
     // landed.
     if (!dbUser) {
-      const user = await currentUser();
-      if (!user) {
-        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      let user: any = null;
+      try {
+        user = await currentUser();
+      } catch {
+        user = null;
       }
-      dbUser = await prisma.user.create({
-        data: {
-          clerkId: userId,
-          email:       user.emailAddresses[0]?.emailAddress || '',
-          firstName:   user.firstName || '',
-          lastName:    user.lastName || '',
-          profileImage: user.imageUrl || '',
-          role: isAdminUser(userId) ? 'admin' : 'tenant',
-        },
-      });
+      if (!user) {
+        return NextResponse.json({ error: 'User not found', role: 'tenant' }, { status: 404 });
+      }
+      try {
+        dbUser = await prisma.user.create({
+          data: {
+            clerkId: userId,
+            email:       user.emailAddresses[0]?.emailAddress || '',
+            firstName:   user.firstName || '',
+            lastName:    user.lastName || '',
+            profileImage: user.imageUrl || '',
+            role: isAdminUser(userId) ? 'admin' : 'tenant',
+          },
+        });
+      } catch (createError) {
+        // Race condition: user might have been created
+        dbUser = await prisma.user.findUnique({ where: { clerkId: userId } });
+        if (!dbUser) {
+          return NextResponse.json({ error: 'User not found', role: 'tenant' }, { status: 404 });
+        }
+      }
     }
 
     return NextResponse.json(dbUser);
   } catch (error: any) {
     console.error('[User GET]', error);
     return NextResponse.json(
-      { error: 'Failed to fetch user' },
+      { error: 'Failed to fetch user', role: 'tenant' },
       { status: 500 }
     );
   }

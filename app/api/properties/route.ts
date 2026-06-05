@@ -5,6 +5,10 @@ import { sanitize } from '@/lib/sanitize';
 import { withRateLimit } from '@/lib/rate-limit';
 import { NextRequest, NextResponse } from 'next/server';
 
+function createErrorResponse(error: string, status: number = 500): NextResponse {
+  return NextResponse.json({ error }, { status });
+}
+
 export async function GET(req: NextRequest) {
   try {
     const searchParams = req.nextUrl.searchParams;
@@ -14,10 +18,27 @@ export async function GET(req: NextRequest) {
     const minPrice = searchParams.get('minPrice');
     const maxPrice = searchParams.get('maxPrice');
 
-    const { userId } = await auth();
-    const user = userId ? await prisma.user.findUnique({ where: { clerkId: userId } }) : null;
-    const isAdmin = user ? isAdminUser(userId) : false;
-    const userLandlordId = user && user.role === 'landlord' ? user.id : null;
+    let userId: string | null = null;
+    let user: any = null;
+    let isAdmin = false;
+    let userLandlordId: string | null = null;
+
+    try {
+      const authResult = await auth();
+      userId = authResult.userId;
+    } catch {
+      // Auth error - continue without user context
+    }
+
+    if (userId) {
+      try {
+        user = await prisma.user.findUnique({ where: { clerkId: userId } });
+        isAdmin = isAdminUser(userId);
+        userLandlordId = user && user.role === 'landlord' ? user.id : null;
+      } catch {
+        // DB error - treat as unauthenticated
+      }
+    }
 
     const accessWhere: any = {};
     if (isAdmin) {
@@ -94,7 +115,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   return withRateLimit(req, async () => {
     try {
-      const { userId } = await auth();
+      let userId: string | null = null;
+      try {
+        const authResult = await auth();
+        userId = authResult.userId;
+      } catch {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
       if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -206,7 +233,13 @@ export async function POST(req: NextRequest) {
 export async function PUT(req: NextRequest) {
   return withRateLimit(req, async () => {
     try {
-      const { userId } = await auth();
+      let userId: string | null = null;
+      try {
+        const authResult = await auth();
+        userId = authResult.userId;
+      } catch {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
       if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }
@@ -276,7 +309,13 @@ export async function PUT(req: NextRequest) {
 export async function DELETE(req: NextRequest) {
   return withRateLimit(req, async () => {
     try {
-      const { userId } = await auth();
+      let userId: string | null = null;
+      try {
+        const authResult = await auth();
+        userId = authResult.userId;
+      } catch {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
       if (!userId) {
         return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
       }

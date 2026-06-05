@@ -99,14 +99,18 @@ export default function PropertyDetailPage() {
         className="container mx-auto px-4 py-8"
       >
         {/* Header Navigation */}
-        <motion.div variants={staggerItem} className="mb-8">
-          <Link href="/marketplace">
-            <button className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors">
-              <span>←</span>
+          <motion.div variants={staggerItem} className="mb-8">
+            <button
+              type="button"
+              onClick={() => router.push('/marketplace')}
+              className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors font-semibold"
+            >
+              <span aria-hidden>←</span>
               Back to Marketplace
             </button>
-          </Link>
-        </motion.div>
+          </motion.div>
+
+
 
         <div className="grid md:grid-cols-3 gap-8">
           {/* Property Images and Info */}
