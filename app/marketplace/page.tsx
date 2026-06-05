@@ -366,7 +366,7 @@ export default function MarketplacePage() {
                                 <div className="text-2xl font-bold text-cyan-400">
                                   KES {property.price.toLocaleString()}
                                 </div>
-                                <div className="text-xs text-gray-500">/night</div>
+                                <div className="text-xs text-gray-500">/month</div>
                               </div>
                               <button className="px-4 py-2 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-sm font-semibold">
                                 View Details

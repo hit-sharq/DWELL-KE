@@ -46,10 +46,9 @@ export default function PropertyDetailPage() {
           const response = await fetch(`/api/properties/${propertyId}`);
         if (!response.ok) throw new Error('Failed to fetch property');
 
-        const properties = await response.json();
-        const prop = properties.find((p: Property) => p.id === propertyId);
+        const prop = await response.json();
 
-        if (!prop) {
+        if (!prop || prop.error) {
           setError('Property not found');
           return;
         }
@@ -211,7 +210,7 @@ export default function PropertyDetailPage() {
                 <div className="text-2xl font-bold text-cyan-400">
                   KES {property.price.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-400">/Night</div>
+                <div className="text-sm text-gray-400">/month</div>
               </div>
             </div>
 

@@ -188,10 +188,18 @@ export async function POST(req: NextRequest) {
     } catch (error: any) {
       console.error('[Property POST]', error);
       return NextResponse.json(
-        { error: 'Failed to create property' },
+        {
+          error: 'Failed to create property',
+          details: {
+            message: error?.message,
+            code: error?.code,
+            name: error?.name,
+          },
+        },
         { status: 500 }
       );
     }
+
   });
 }
 
