@@ -125,14 +125,44 @@ export async function POST(req: NextRequest) {
         }
       }
 
+      // Parse & validate numeric fields early to avoid Prisma throwing 500s.
+      const price = Number(body.price);
+      const bedrooms = Number(body.bedrooms);
+      const bathrooms = Number(body.bathrooms);
+
+      if (!Number.isFinite(price) || !Number.isFinite(bedrooms) || !Number.isFinite(bathrooms)) {
+        return NextResponse.json(
+          {
+            error: 'Invalid numeric values',
+            details: {
+              price: body.price,
+              bedrooms: body.bedrooms,
+              bathrooms: body.bathrooms,
+            },
+          },
+          { status: 400 }
+        );
+      }
+
+      // Bedrooms/bathrooms are Int in Prisma. Reject non-integers.
+      if (!Number.isInteger(bedrooms) || !Number.isInteger(bathrooms)) {
+        return NextResponse.json(
+          {
+            error: 'Bedrooms and bathrooms must be integers',
+            details: { bedrooms: body.bedrooms, bathrooms: body.bathrooms },
+          },
+          { status: 400 }
+        );
+      }
+
       const property = await prisma.property.create({
         data: {
           title: sanitize.plain(body.title),
           description: sanitize.description(body.description),
           location: sanitize.plain(body.location),
-          price: parseFloat(body.price),
-          bedrooms: parseInt(body.bedrooms, 10),
-          bathrooms: parseInt(body.bathrooms, 10),
+          price,
+          bedrooms,
+          bathrooms,
           type: sanitize.plain(body.type),
           amenities: Array.isArray(body.amenities) ? body.amenities.map((a: string) => sanitize.plain(a)) : [],
           images: Array.isArray(body.images) ? body.images : [],
@@ -152,6 +182,7 @@ export async function POST(req: NextRequest) {
           },
         },
       });
+
 
       return NextResponse.json(property, { status: 201 });
     } catch (error: any) {
