@@ -1,5 +1,6 @@
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import { sanitize } from '@/lib/sanitize';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
@@ -14,7 +15,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Only tenants can submit requests
     if (user.role !== 'tenant') {
       return NextResponse.json(
         { error: 'Forbidden – only tenants can submit property requests' },
@@ -23,7 +23,7 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { propertyId, type, message, preferredDateTime, budget, seriousness } = body;
+    const { propertyId, type, message } = body;
 
     if (!propertyId || !type) {
       return NextResponse.json(
@@ -32,7 +32,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate type
     const validTypes = ['viewing', 'interest', 'application'];
     if (!validTypes.includes(type)) {
       return NextResponse.json(
@@ -41,43 +40,66 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check if property exists and is verified (for viewing and interest requests)
     const property = await prisma.property.findUnique({
       where: { id: propertyId },
-      select: { id: true, verified: true, landlordId: true },
+      select: { id: true, verified: true, landlordId: true, status: true },
     });
 
     if (!property) {
       return NextResponse.json({ error: 'Property not found' }, { status: 404 });
     }
 
-    // For viewing and interest requests, property must be verified
-    if (type === 'viewing' || type === 'interest') {
-      if (!property.verified) {
-        return NextResponse.json(
-          { error: 'Property is not yet verified and cannot be requested' },
-          { status: 400 }
-        );
-      }
+    if (property.status === 'unavailable' || property.status === 'occupied') {
+      return NextResponse.json(
+        { error: 'Property is not available for applications' },
+        { status: 400 }
+      );
     }
 
-    // Create the request
+    const count = await prisma.propertyRequest.count({
+      where: {
+        propertyId,
+        tenantId: user.id,
+        status: { notIn: ['cancelled', 'pending_payment'] },
+      },
+    });
+
+    if (count > 0) {
+      return NextResponse.json(
+        { error: 'You have already submitted a request for this property' },
+        { status: 409 }
+      );
+    }
+
+    if (type === 'application') {
+      const request = await prisma.propertyRequest.create({
+        data: {
+          type,
+          message: message ? sanitize.plain(message) : '',
+          status: 'pending_payment',
+          amount: 10,
+          tenantId: user.id,
+          propertyId,
+        },
+      });
+
+      return NextResponse.json(
+        { ...request, requiresPayment: true },
+        { status: 201 }
+      );
+    }
+
     const request = await prisma.propertyRequest.create({
       data: {
         type,
-        message: message || null,
-        preferredDateTime: preferredDateTime ? new Date(preferredDateTime) : null,
-        budget: budget ? parseFloat(budget) : null,
-        seriousness,
+        message: message ? sanitize.plain(message) : '',
+        status: 'pending',
         tenantId: user.id,
         propertyId,
       },
     });
 
-    // Notify the landlord? We'll leave that to a background process or webhook for now.
-    // For now, we just return the request.
-
-    return NextResponse.json(request, { status: 201 });
+    return NextResponse.json({ ...request, requiresPayment: false }, { status: 201 });
   } catch (error: any) {
     console.error('[Property Requests POST]', error);
     return NextResponse.json(
@@ -99,32 +121,84 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Only landlords can view requests for their properties
-    if (user.role !== 'landlord') {
+    const { searchParams } = req.nextUrl;
+    const propertyId = searchParams.get('propertyId');
+    const status = searchParams.get('status');
+    const requestId = searchParams.get('id');
+
+    if (requestId) {
+      const request = await prisma.propertyRequest.findUnique({
+        where: { id: requestId },
+        include: {
+          tenant: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              profileImage: true,
+              email: true,
+              phone: true,
+            },
+          },
+          property: {
+            select: {
+              id: true,
+              title: true,
+              location: true,
+              price: true,
+              images: true,
+              landlord: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  phone: true,
+                  email: true,
+                },
+              },
+            },
+          },
+          payment: {
+            select: {
+              id: true,
+              status: true,
+              reference: true,
+              orderTrackingId: true,
+            },
+          },
+        },
+      });
+
+      if (!request) {
+        return NextResponse.json({ error: 'Request not found' }, { status: 404 });
+      }
+
+      const isTenant = request.tenantId === user.id;
+      const isLandlord = request.property.landlordId === user.id;
+      const isAdmin = user.role === 'admin';
+
+      if (!isTenant && !isLandlord && !isAdmin) {
+        return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      }
+
+      return NextResponse.json(request);
+    }
+
+    const where: any = {};
+
+    if (user.role === 'landlord') {
+      where.property = { landlordId: user.id };
+    } else if (user.role === 'tenant') {
+      where.tenantId = user.id;
+    } else {
       return NextResponse.json(
-        { error: 'Forbidden – only landlords can view property requests' },
+        { error: 'Forbidden' },
         { status: 403 }
       );
     }
 
-    const { searchParams } = req.nextUrl;
-    const propertyId = searchParams.get('propertyId');
-    const status = searchParams.get('status');
-
-    // Build where clause: requests for properties owned by this landlord
-    const where: any = {
-      property: {
-        landlordId: user.id,
-      },
-    };
-
-    if (propertyId) {
-      where.propertyId = propertyId;
-    }
-
-    if (status) {
-      where.status = status;
-    }
+    if (propertyId) where.propertyId = propertyId;
+    if (status) where.status = status;
 
     const requests = await prisma.propertyRequest.findMany({
       where,
@@ -144,6 +218,13 @@ export async function GET(req: NextRequest) {
             location: true,
             price: true,
             verified: true,
+            images: true,
+          },
+        },
+        payment: {
+          select: {
+            id: true,
+            status: true,
           },
         },
       },

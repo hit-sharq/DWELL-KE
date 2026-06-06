@@ -7,11 +7,12 @@ import { PremiumButton } from '@/components/PremiumButton';
 import { scrollReveal } from '@/lib/animations';
 
 type SettingsPayload = {
-  maintenanceMode: boolean;
+  maintenanceMode:   boolean;
   emailNotifications: boolean;
   allowNewSignups:  boolean;
   fraudSensitivity: 'low' | 'medium' | 'high';
   commissionRate:   number;
+  applicationFee:   number;
 };
 
 const EMPTY_SETTINGS: SettingsPayload = {
@@ -20,6 +21,7 @@ const EMPTY_SETTINGS: SettingsPayload = {
   allowNewSignups:   true,
   fraudSensitivity:  'medium',
   commissionRate:    10,
+  applicationFee:    10,
 };
 
 export default function AdminSettingsPage() {
@@ -50,6 +52,7 @@ export default function AdminSettingsPage() {
               allowNewSignups:    Boolean(body.settings.allowNewSignups),
               fraudSensitivity:   (body.settings.fraudSensitivity as SettingsPayload['fraudSensitivity']) || 'medium',
               commissionRate:     Number(body.settings.commissionRate) || 10,
+              applicationFee:     Number(body.settings.applicationFee) || 10,
             };
             setSettings(parsed);
             initialRef.current = { ...parsed };
@@ -71,12 +74,17 @@ export default function AdminSettingsPage() {
     setSettings((p) => ({ ...p, commissionRate: value }));
   };
 
+  const updateFee = (value: number) => {
+    setSettings((p) => ({ ...p, applicationFee: value }));
+  };
+
   const hasChanges =
     settings.maintenanceMode    !== initialRef.current.maintenanceMode ||
     settings.emailNotifications !== initialRef.current.emailNotifications ||
     settings.allowNewSignups    !== initialRef.current.allowNewSignups ||
     settings.fraudSensitivity   !== initialRef.current.fraudSensitivity ||
-    settings.commissionRate     !== initialRef.current.commissionRate;
+    settings.commissionRate     !== initialRef.current.commissionRate ||
+    settings.applicationFee     !== initialRef.current.applicationFee;
 
   const handleSave = async () => {
     if (!hasChanges) return;
@@ -302,6 +310,28 @@ export default function AdminSettingsPage() {
                 <span>0%</span>
                 <span>12.5%</span>
                 <span>25%</span>
+              </div>
+            </div>
+
+            {/* Application Fee */}
+            <div className="pt-4 border-t border-slate-700/50 mt-4">
+              <label className="block text-sm font-medium text-white mb-2">
+                Application Fee (KES)
+              </label>
+              <p className="text-xs text-gray-500 mb-3">
+                Fee charged to tenants when they apply for a property viewing.
+              </p>
+              <div className="flex items-center gap-3">
+                <span className="text-cyan-400 font-bold text-lg">KES</span>
+                <input
+                  type="number"
+                  min="0"
+                  max="100000"
+                  step="100"
+                  value={settings.applicationFee}
+                  onChange={(e) => updateFee(parseInt(e.target.value, 10) || 0)}
+                  className="w-40 px-4 py-2.5 rounded-xl bg-slate-800 border border-slate-700 text-white text-right text-lg font-bold focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20"
+                />
               </div>
             </div>
           </GlassmorphicCard>

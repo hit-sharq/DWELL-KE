@@ -3,48 +3,65 @@ import { prisma } from '@/lib/db';
 import { isAdminUser } from '@/lib/admin';
 import { NextRequest, NextResponse } from 'next/server';
 
-/* ── In-memory settings store (stub – replace with Prisma Setting model) ── */
-const SETTINGS_KEY = 'platform_settings';
-let settingsStore: Record<string, unknown> | null = null;
+const DEFAULT_SETTINGS: Record<string, string> = {
+  maintenanceMode: 'false',
+  emailNotifications: 'true',
+  allowNewSignups: 'true',
+  fraudSensitivity: 'medium',
+  commissionRate: '10',
+  applicationFee: '10',
+};
 
-function getSettings() {
-  if (!settingsStore) {
-    settingsStore = {
-      maintenanceMode:    false,
-      emailNotifications: true,
-      allowNewSignups:    true,
-      fraudSensitivity:   'medium',
-      commissionRate:     10,
-      updatedAt:          new Date().toISOString(),
-    };
-  }
-  return settingsStore;
+async function getSetting(key: string): Promise<string> {
+  const record = await prisma.siteSetting.findUnique({ where: { key } });
+  return record?.value ?? DEFAULT_SETTINGS[key] ?? '';
 }
 
-/** GET /api/admin/settings  — admin-only; returns current settings */
+async function setSetting(key: string, value: string) {
+  await prisma.siteSetting.upsert({
+    where: { key },
+    update: { value },
+    create: { key, value },
+  });
+}
+
+/** GET /api/admin/settings */
 export async function GET() {
   try {
     const { userId } = await auth();
-    if (!userId)               return NextResponse.json({ error: 'Unauthorized' },    { status: 401 });
-    if (!isAdminUser(userId))  return NextResponse.json({ error: 'Forbidden' },      { status: 403 });
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdminUser(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
-    return NextResponse.json({ settings: getSettings() });
-  } catch (error) {
+    const entries = await prisma.siteSetting.findMany();
+    const settings: Record<string, string> = {};
+    for (const entry of entries) {
+      settings[entry.key] = entry.value;
+    }
+
+    return NextResponse.json({
+      settings: {
+        maintenanceMode:    settings.maintenanceMode ?? DEFAULT_SETTINGS.maintenanceMode,
+        emailNotifications: settings.emailNotifications ?? DEFAULT_SETTINGS.emailNotifications,
+        allowNewSignups:    settings.allowNewSignups ?? DEFAULT_SETTINGS.allowNewSignups,
+        fraudSensitivity:   settings.fraudSensitivity ?? DEFAULT_SETTINGS.fraudSensitivity,
+        commissionRate:     settings.commissionRate ?? DEFAULT_SETTINGS.commissionRate,
+        applicationFee:     Number(settings.applicationFee ?? DEFAULT_SETTINGS.applicationFee),
+      },
+    });
+  } catch (error: any) {
     console.error('[Admin Settings GET]', error);
     return NextResponse.json({ error: 'Failed to load settings' }, { status: 500 });
   }
 }
 
-/** POST /api/admin/settings  — admin-only; validates and persists setting changes */
+/** POST /api/admin/settings */
 export async function POST(req: NextRequest) {
   try {
     const { userId } = await auth();
-    if (!userId)               return NextResponse.json({ error: 'Unauthorized' },    { status: 401 });
-    if (!isAdminUser(userId))  return NextResponse.json({ error: 'Forbidden' },      { status: 403 });
+    if (!userId) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (!isAdminUser(userId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
 
     const body: Record<string, unknown> = await req.json();
-
-    // ── Validate individual fields ──
     const errors: Record<string, string> = {};
 
     if (body.maintenanceMode !== undefined && typeof body.maintenanceMode !== 'boolean') {
@@ -68,39 +85,62 @@ export async function POST(req: NextRequest) {
         errors.commissionRate = 'Must be a number between 0 and 100';
       }
     }
+    if (body.applicationFee !== undefined) {
+      const fee = Number(body.applicationFee);
+      if (isNaN(fee) || fee < 0 || fee > 100000) {
+        errors.applicationFee = 'Must be a number between 0 and 100,000';
+      }
+    }
 
     if (Object.keys(errors).length > 0) {
       return NextResponse.json({ error: 'Validation failed', details: errors }, { status: 400 });
     }
 
-    // ── Merge validated fields into store ──
-    const current = getSettings();
-    const updated: Record<string, unknown> = {
-      ...current,
-      ...body,
-      updatedAt: new Date().toISOString(),
-    };
-    settingsStore = updated;
+    const updates: Promise<void>[] = [];
 
-    // ── Persist activity log (best-effort) ──
-    try {
-      const dbUser = await prisma.user.findUnique({ where: { clerkId: userId! } });
-      if (dbUser) {
-        await prisma.activityLog.create({
-          data: {
-            userId:      dbUser.id,
-            action:      'updated_settings',
-            description: `Platform settings updated by ${dbUser.firstName ?? dbUser.email}`,
-            metadata:    JSON.stringify(Object.keys(body)),
-          },
-        });
-      }
-    } catch {
-      // Non-blocking — log best-effort
+    if (body.maintenanceMode !== undefined) updates.push(setSetting('maintenanceMode', String(body.maintenanceMode)));
+    if (body.emailNotifications !== undefined) updates.push(setSetting('emailNotifications', String(body.emailNotifications)));
+    if (body.allowNewSignups !== undefined) updates.push(setSetting('allowNewSignups', String(body.allowNewSignups)));
+    if (body.fraudSensitivity !== undefined) updates.push(setSetting('fraudSensitivity', String(body.fraudSensitivity)));
+    if (body.commissionRate !== undefined) updates.push(setSetting('commissionRate', String(body.commissionRate)));
+    if (body.applicationFee !== undefined) updates.push(setSetting('applicationFee', String(body.applicationFee)));
+
+    await Promise.all(updates);
+
+    const settings: Record<string, string> = {};
+    for (const key of Object.keys({ ...DEFAULT_SETTINGS, ...Object.fromEntries(Object.entries(body).filter(([, v]) => v !== undefined)) })) {
+      settings[key] = await getSetting(key);
     }
 
-    return NextResponse.json({ settings: updated });
-  } catch (error) {
+    let dbUser: { id: string; firstName: string | null; email: string } | null = null;
+    try {
+      dbUser = await prisma.user.findUnique({ where: { clerkId: userId }, select: { id: true, firstName: true, email: true } });
+    } catch { /* non-blocking */ }
+
+    if (dbUser) {
+      try {
+        await prisma.activityLog.create({
+          data: {
+            userId: dbUser.id,
+            action: 'updated_settings',
+            description: `Platform settings updated by ${dbUser.firstName ?? dbUser.email}`,
+            metadata: JSON.stringify({ fields: Object.keys(body) }),
+          },
+        });
+      } catch { /* non-blocking */ }
+    }
+
+    return NextResponse.json({
+      settings: {
+        maintenanceMode:    settings.maintenanceMode === 'true',
+        emailNotifications: settings.emailNotifications === 'true',
+        allowNewSignups:    settings.allowNewSignups === 'true',
+        fraudSensitivity:   settings.fraudSensitivity ?? 'medium',
+        commissionRate:     Number(settings.commissionRate) ?? 0,
+        applicationFee:     Number(settings.applicationFee ?? DEFAULT_SETTINGS.applicationFee),
+      },
+    });
+  } catch (error: any) {
     console.error('[Admin Settings POST]', error);
     return NextResponse.json({ error: 'Failed to save settings' }, { status: 500 });
   }

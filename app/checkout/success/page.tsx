@@ -10,16 +10,16 @@ function SuccessContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const bookingId = searchParams.get('bookingId');
+  const propertyRequestId = searchParams.get('propertyRequestId');
+  const isPropertyRequest = !!propertyRequestId;
 
   useEffect(() => {
-    // Optionally poll for payment confirmation or use this time to update UI
     const timer = setTimeout(() => {
-      // Auto-redirect after 5 seconds
-      // router.push(`/dashboard/tenant`);
-    }, 5000);
+      router.push('/dashboard/tenant');
+    }, 8000);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [router]);
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
@@ -33,7 +33,6 @@ function SuccessContent() {
           variants={staggerItem}
           className="text-center space-y-8 max-w-md"
         >
-          {/* Success Icon */}
           <motion.div
             variants={staggerItem}
             className="flex justify-center"
@@ -57,23 +56,27 @@ function SuccessContent() {
             </div>
           </motion.div>
 
-          {/* Message */}
           <motion.div variants={staggerItem} className="space-y-3">
-            <h1 className="text-4xl font-bold text-white">Payment Successful!</h1>
+            <h1 className="text-4xl font-bold text-white">
+              {isPropertyRequest ? 'Application Submitted!' : 'Payment Successful!'}
+            </h1>
             <p className="text-gray-400 text-lg">
-              Your booking has been confirmed. You should receive a confirmation email shortly.
+              {isPropertyRequest
+                ? 'Your application has been submitted. We\'ll contact the landlord and schedule a viewing within 24 hours.'
+                : 'Your booking has been confirmed. You should receive a confirmation email shortly.'}
             </p>
           </motion.div>
 
-          {/* Booking Info */}
-          {bookingId && (
+          {(bookingId || propertyRequestId) && (
             <motion.div
               variants={staggerItem}
               className="p-6 rounded-xl bg-slate-900/50 border border-cyan-500/30 space-y-3"
             >
-              <div className="text-sm text-gray-400">Booking Reference</div>
+              <div className="text-sm text-gray-400">
+                {isPropertyRequest ? 'Application' : 'Booking'} Reference
+              </div>
               <div className="text-xl font-mono font-bold text-cyan-400">
-                {bookingId.substring(0, 8).toUpperCase()}
+                {(bookingId || propertyRequestId)?.substring(0, 8)?.toUpperCase()}
               </div>
               <p className="text-xs text-gray-500">
                 Save this for your records
@@ -81,29 +84,50 @@ function SuccessContent() {
             </motion.div>
           )}
 
-          {/* Next Steps */}
           <motion.div
             variants={staggerItem}
             className="p-6 rounded-xl bg-blue-500/10 border border-blue-500/30 space-y-3 text-left"
           >
             <div className="font-bold text-blue-300 mb-3">Next Steps:</div>
             <ul className="space-y-2 text-sm text-blue-200">
-              <li className="flex gap-3">
-                <span className="text-blue-400">1.</span>
-                <span>Check your email for booking confirmation</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-blue-400">2.</span>
-                <span>View your booking in the dashboard</span>
-              </li>
-              <li className="flex gap-3">
-                <span className="text-blue-400">3.</span>
-                <span>Connect with the landlord before check-in</span>
-              </li>
+              {isPropertyRequest ? (
+                <>
+                  <li className="flex gap-3">
+                    <span className="text-blue-400">1.</span>
+                    <span>We verify your payment and contact the landlord</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-blue-400">2.</span>
+                    <span>We schedule a viewing at your convenience</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-blue-400">3.</span>
+                    <span>View the property with our team</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-blue-400">4.</span>
+                    <span>We help you negotiate the lease</span>
+                  </li>
+                </>
+              ) : (
+                <>
+                  <li className="flex gap-3">
+                    <span className="text-blue-400">1.</span>
+                    <span>Check your email for booking confirmation</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-blue-400">2.</span>
+                    <span>View your booking in the dashboard</span>
+                  </li>
+                  <li className="flex gap-3">
+                    <span className="text-blue-400">3.</span>
+                    <span>Connect with the landlord before move-in</span>
+                  </li>
+                </>
+              )}
             </ul>
           </motion.div>
 
-          {/* Action Buttons */}
           <motion.div variants={staggerItem} className="flex flex-col gap-3">
             <Link href="/dashboard/tenant">
               <button className="w-full px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-semibold">
@@ -116,11 +140,11 @@ function SuccessContent() {
               </button>
             </Link>
           </motion.div>
-</motion.div>
-       </motion.div>
-     </main>
-   );
- }
+        </motion.div>
+      </motion.div>
+    </main>
+  );
+}
 
 export default function SuccessPage() {
   return (

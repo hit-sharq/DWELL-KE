@@ -3,100 +3,13 @@ import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function POST(req: NextRequest) {
-  try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({ where: { clerkId: userId } });
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const body = await req.json();
-    const { paymentId } = body;
-
-    if (!paymentId) {
-      return NextResponse.json(
-        { error: 'Payment ID is required' },
-        { status: 400 }
-      );
-    }
-
-    // Find the payment and ensure it belongs to a booking where the user is the tenant
-    const payment = await prisma.payment.findUnique({
-      where: { id: paymentId },
-      include: {
-        booking: {
-          include: {
-            tenant: {
-              select: { id: true },
-            },
-            property: {
-              select: { landlordId: true },
-            },
-          },
-        },
-      },
-    });
-
-    if (!payment) {
-      return NextResponse.json({ error: 'Payment not found' }, { status: 404 });
-    }
-
-    const isTenant = payment.booking.tenantId === user.id;
-    const isAdmin = user.role === 'admin';
-
-    if (!(isTenant || isAdmin)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    // Only allow updating if payment is pending
-    if (payment.status !== 'pending') {
-      return NextResponse.json(
-        { error: 'Payment is not in pending status' },
-        { status: 400 }
-      );
-    }
-
-    // Update the payment status to completed
-    const updatedPayment = await prisma.payment.update({
-      where: { id: paymentId },
-      data: {
-        status: 'completed',
-        reference: `simulated_${Date.now()}`, // Simulate a payment reference
-      },
-      include: {
-        booking: {
-          include: {
-            property: {
-              select: { landlordId: true },
-            },
-          },
-        },
-      },
-    });
-
-    // Update the booking status to confirmed
-    await prisma.booking.update({
-      where: { id: payment.bookingId },
-      data: {
-        status: 'confirmed',
-      },
-    });
-
-    // TODO: Notify the landlord that payment has been received and booking is confirmed.
-    // TODO: Schedule payout to landlord (minus any fees) - we'll leave that for later.
-
-    return NextResponse.json(updatedPayment);
-  } catch (error: any) {
-    console.error('[Payments POST]', error);
-    return NextResponse.json(
-      { error: 'Failed to process payment' },
-      { status: 500 }
-    );
-  }
+  return NextResponse.json(
+    {
+      error: 'This endpoint has been disabled. Payment completion must come from PesaPal via /api/pesapal/callback.',
+      deprecated: true,
+    },
+    { status: 410 }
+  );
 }
 
 export async function GET(req: NextRequest) {
@@ -113,27 +26,28 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = req.nextUrl;
     const bookingId = searchParams.get('bookingId');
+    const propertyRequestId = searchParams.get('propertyRequestId');
 
     let where: any = {};
 
     if (bookingId) {
       where.bookingId = bookingId;
     }
+    if (propertyRequestId) {
+      where.propertyRequestId = propertyRequestId;
+    }
 
-    // Restrict to payments related to the user's bookings
     if (user.role === 'tenant') {
-      where.booking = {
-        tenantId: user.id,
-      };
+      where.OR = [
+        { booking: { tenantId: user.id } },
+        { propertyRequest: { tenantId: user.id } },
+      ];
     } else if (user.role === 'landlord') {
-      where.booking = {
-        property: {
-          landlordId: user.id,
-        },
-      };
-    } else if (user.role === 'admin') {
-      // Admin can see all payments
-    } else {
+      where.OR = [
+        { booking: { property: { landlordId: user.id } } },
+        { propertyRequest: { property: { landlord: { id: user.id } } } },
+      ];
+    } else if (user.role !== 'admin') {
       return NextResponse.json({ error: 'Unauthorized role' }, { status: 403 });
     }
 
@@ -141,6 +55,16 @@ export async function GET(req: NextRequest) {
       where,
       include: {
         booking: {
+          include: {
+            property: {
+              select: { title: true, location: true },
+            },
+            tenant: {
+              select: { firstName: true, lastName: true },
+            },
+          },
+        },
+        propertyRequest: {
           include: {
             property: {
               select: { title: true, location: true },

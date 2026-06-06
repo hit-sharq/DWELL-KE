@@ -101,18 +101,24 @@ model Booking {
 
 // Payment model
 model Payment {
-  id            String    @id @default(cuid())
-  amount        Float
-  currency      String    @default("KES")
-  status        String    @default("pending") // pending, completed, failed, refunded
-  paymentMethod String?   // pesapal, card, etc.
-  reference     String?   @unique // PesaPal or payment gateway reference
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id                  String    @id @default(cuid())
+  amount              Float
+  currency            String    @default("KES")
+  status              String    @default("pending") // pending, completed, failed, refunded
+  paymentMethod       String?   // pesapal, card, etc.
+  reference           String?   @unique // PesaPal or payment gateway reference
+  orderTrackingId     String?   // PesaPal order tracking ID
+  merchantReference   String?   // PesaPal merchant reference
+  transactionCode     String?   // PesaPal transaction code
+  pesaPalReference    String?   // PesaPal reference (payment method used)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
 
   // Relations
-  bookingId     String    @unique
-  booking       Booking   @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  bookingId           String?   @unique
+  booking             Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  propertyRequestId   String?   @unique
+  propertyRequest     PropertyRequest? @relation(fields: [propertyRequestId], references: [id], onDelete: SetNull)
 
   @@map("payments")
 }
@@ -227,11 +233,13 @@ model SiteSetting {
 model PropertyRequest {
   id            String    @id @default(cuid())
   type          String    // viewing, interest, application
-  status        String    @default("pending") // pending, approved, declined, cancelled
+  status        String   @default("pending") // pending_payment, pending, approved, declined, cancelled
   message       String?   // tenant's message
+  amount        Float?    // application fee amount (KES)
   preferredDateTime DateTime? // for viewing requests
   budget        Float?    // tenant's budget for screening
   seriousness   String?   // low, medium, high (or a score)
+  paidAt        DateTime? // payment timestamp
   checkInDate   DateTime? // for application requests
   checkOutDate  DateTime? // for application requests
   createdAt     DateTime  @default(now())
@@ -243,6 +251,7 @@ model PropertyRequest {
   propertyId    String
   property      Property  @relation("PropertyRequestProperty", fields: [propertyId], references: [id])
   viewing       Viewing?  @relation("ViewingPropertyRequest")
+  payment       Payment?
 
   @@map("property_requests")
 }

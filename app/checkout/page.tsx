@@ -16,54 +16,78 @@ function CheckoutContent() {
   const { userId, isLoaded } = useAuth();
 
   const bookingId = searchParams.get('bookingId');
+  const propertyRequestId = searchParams.get('propertyRequestId');
+  const paymentStatus = searchParams.get('status');
 
   const [booking, setBooking] = useState<any>(null);
+  const [propertyRequest, setPropertyRequest] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState('');
 
+  const isBooking = !!bookingId;
+  const referenceId = bookingId || propertyRequestId;
+
   useEffect(() => {
-    if (!bookingId) {
-      setError('No booking found');
+    if (paymentStatus === 'completed' || paymentStatus === 'failed') {
+      return;
+    }
+
+    if (!referenceId) {
+      setError('No booking or property request found');
       setIsLoading(false);
       return;
     }
 
-    const fetchBooking = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch(`/api/bookings`);
-        if (!response.ok) throw new Error('Failed to fetch bookings');
+        let data;
+        if (isBooking) {
+          const response = await fetch(`/api/property-requests?id=${bookingId}`);
+          if (!response.ok) throw new Error('Failed to fetch booking');
+          const bookings = await response.json();
+          data = bookings.find((b: any) => b.id === bookingId);
+        } else {
+          const response = await fetch(`/api/property-requests?id=${propertyRequestId}`);
+          if (!response.ok) throw new Error('Failed to fetch property request');
+          data = await response.json();
+        }
 
-        const bookings = await response.json();
-        const found = bookings.find((b: any) => b.id === bookingId);
-
-        if (!found) {
-          setError('Booking not found');
+        if (!data) {
+          setError('Not found');
           return;
         }
 
-        setBooking(found);
+        if (isBooking) {
+          setBooking(data);
+        } else {
+          setPropertyRequest(data);
+        }
       } catch (err) {
         setError(
-          err instanceof Error ? err.message : 'Failed to load booking'
+          err instanceof Error ? err.message : 'Failed to load details'
         );
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchBooking();
-  }, [bookingId]);
+    fetchData();
+  }, [referenceId, propertyRequestId, bookingId, isBooking, paymentStatus]);
 
   const handlePayment = async () => {
     setIsProcessing(true);
     setError('');
 
     try {
+      const body = isBooking
+        ? { bookingId }
+        : { propertyRequestId };
+
       const response = await fetch('/api/payments/initiate', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ bookingId }),
+        body: JSON.stringify(body),
       });
 
       if (!response.ok) {
@@ -87,18 +111,34 @@ function CheckoutContent() {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-white text-xl">Loading booking details...</div>
+        <div className="text-white text-xl">Loading details...</div>
       </div>
     );
   }
 
-  if (error && !booking) {
+  if (error && !booking && !propertyRequest) {
     return (
       <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
         <div className="text-white text-xl">{error}</div>
-        <Link href="/dashboard/tenant">
+        <Link href="/marketplace">
           <button className="px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
-            Back to Dashboard
+            Back to Marketplace
+          </button>
+        </Link>
+      </div>
+    );
+  }
+
+  const item = isBooking ? booking : propertyRequest;
+  const isPropertyRequest = !isBooking;
+
+  if (!item) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
+        <div className="text-white text-xl">Loading application details...</div>
+        <Link href="/marketplace">
+          <button className="px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
+            Back to Marketplace
           </button>
         </Link>
       </div>
@@ -115,7 +155,7 @@ function CheckoutContent() {
         className="container mx-auto px-4 py-12"
       >
         <motion.div variants={staggerItem} className="mb-8">
-          <Link href={`/properties/${booking?.propertyId}`}>
+          <Link href={`/properties/${item.property?.id}`}>
             <button className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors">
               <span>←</span>
               Back to Property
@@ -126,81 +166,95 @@ function CheckoutContent() {
         <div className="grid md:grid-cols-3 gap-8">
           <motion.div variants={staggerItem} className="md:col-span-2">
             <div className="rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-slate-900/40 to-slate-900/20 backdrop-blur p-8 space-y-6">
-              <h1 className="text-3xl font-bold text-white">Order Summary</h1>
+              <h1 className="text-3xl font-bold text-white">
+                {isPropertyRequest ? 'Application Details' : 'Order Summary'}
+              </h1>
 
-              {booking && (
+              {item && (
                 <>
                   <div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
                     <h3 className="text-lg font-bold text-white">
-                      {booking.property.title}
+                      {item.property?.title}
                     </h3>
                     <div className="flex items-start gap-4">
-                      {booking.property.images[0] && (
+                      {item.property?.images?.[0] && (
                         <img
-                          src={booking.property.images[0]}
-                          alt={booking.property.title}
+                          src={item.property.images[0]}
+                          alt={item.property.title}
                           className="w-24 h-24 object-cover rounded-lg"
                         />
                       )}
                       <div className="flex-1 space-y-2">
                         <p className="text-gray-400">
-                          📍 {booking.property.location}
+                          📍 {item.property?.location}
                         </p>
                         <p className="text-gray-400">
-                          📅{' '}
-                          {new Date(booking.checkInDate).toLocaleDateString()} to{' '}
-                          {new Date(booking.checkOutDate).toLocaleDateString()}
+                          💰 KES {item.property?.price?.toLocaleString()}/month
                         </p>
-                        <p className="text-gray-400">
-                          👥 {booking.numberOfGuests}{' '}
-                          {booking.numberOfGuests === 1 ? 'Guest' : 'Guests'}
-                        </p>
+                        {item.message && (
+                          <div className="mt-3 p-3 rounded bg-blue-500/10 border border-blue-500/30">
+                            <p className="font-semibold text-blue-300 mb-1 text-sm">Your Message:</p>
+                            <p className="text-blue-200 text-sm">{item.message}</p>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
 
                   <div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 space-y-3">
-                    <h3 className="font-bold text-white">Booking Details</h3>
+                    <h3 className="font-bold text-white">
+                      {isPropertyRequest ? 'Application Details' : 'Booking Details'}
+                    </h3>
                     <div className="space-y-2 text-sm text-gray-300">
                       <div className="flex justify-between">
-                        <span>Booking ID:</span>
+                        <span>{isPropertyRequest ? 'Application ID:' : 'Booking ID:'}</span>
                         <span className="font-mono text-cyan-400">
-                          {booking.id.substring(0, 8)}...
+                          {item.id.substring(0, 8)}...
                         </span>
                       </div>
                       <div className="flex justify-between">
                         <span>Status:</span>
-                        <span className="px-3 py-1 bg-yellow-500/20 border border-yellow-500/50 text-yellow-400 text-xs font-bold rounded-full capitalize">
-                          {booking.status}
+                        <span className={`px-3 py-1 text-xs font-bold rounded-full ${
+                          item.status === 'pending_payment' ? 'bg-yellow-500/20 border border-yellow-500/50 text-yellow-400' :
+                          item.status === 'pending' ? 'bg-blue-500/20 border border-blue-500/50 text-blue-400' :
+                          item.status === 'approved' ? 'bg-green-500/20 border border-green-500/50 text-green-400' :
+                          'bg-red-500/20 border border-red-500/50 text-red-400'
+                        }`}>
+                          {item.status}
                         </span>
                       </div>
-                      {booking.specialRequests && (
-                        <div className="mt-4 p-3 rounded bg-blue-500/10 border border-blue-500/30 text-blue-300">
-                          <p className="font-semibold mb-1">Special Requests:</p>
-                          <p>{booking.specialRequests}</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
-                    <h3 className="font-bold text-white">Payment Information</h3>
-                    <p className="text-gray-400 text-sm">
-                      We accept payments via PesaPal. You'll be redirected to complete
-                      your payment securely.
-                    </p>
-                    <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/30 space-y-2">
-                      <div className="text-sm text-gray-400">Accepted Methods:</div>
-                      <div className="text-cyan-400 text-sm space-y-1">
-                        <div>✓ M-Pesa</div>
-                        <div>✓ Airtel Money</div>
-                        <div>✓ Bank Transfer</div>
-                        <div>✓ Card Payments</div>
+                      <div className="flex justify-between">
+                        <span>Date Submitted:</span>
+                        <span>{new Date(item.createdAt).toLocaleDateString()}</span>
                       </div>
                     </div>
                   </div>
 
-                  {error && (
+                  {isPropertyRequest && (
+                    <div className="p-6 rounded-xl bg-slate-900/50 border border-slate-800 space-y-4">
+                      <h3 className="font-bold text-white">What Happens Next?</h3>
+                      <div className="space-y-3 text-sm text-gray-300">
+                        <div className="flex gap-3">
+                          <span className="text-cyan-400">1.</span>
+                          <span>We verify your application fee payment</span>
+                        </div>
+                        <div className="flex gap-3">
+                          <span className="text-cyan-400">2.</span>
+                          <span>Our team contacts the landlord to schedule a viewing</span>
+                        </div>
+                        <div className="flex gap-3">
+                          <span className="text-cyan-400">3.</span>
+                          <span>We can accompany you to the property for the viewing</span>
+                        </div>
+                        <div className="flex gap-3">
+                          <span className="text-cyan-400">4.</span>
+                          <span>If you like the property, we help with lease negotiations</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {error && !paymentStatus && (
                     <div className="p-4 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400">
                       {error}
                     </div>
@@ -212,57 +266,69 @@ function CheckoutContent() {
 
           <motion.div variants={staggerItem}>
             <div className="sticky top-8 rounded-2xl border border-cyan-500/30 bg-gradient-to-b from-slate-900/40 to-slate-900/20 backdrop-blur p-8 space-y-6">
-              <h3 className="text-xl font-bold text-white">Price Breakdown</h3>
+              <h3 className="text-xl font-bold text-white">Payment Summary</h3>
 
-              {booking && (
+              {item && (
                 <>
-                  <div className="space-y-3 pb-4 border-b border-slate-700">
-                    <div className="flex justify-between text-gray-300">
-                      <span>
-                        {Math.ceil(
-                          (new Date(booking.checkOutDate).getTime() -
-                            new Date(booking.checkInDate).getTime()) /
-                            (1000 * 60 * 60 * 24)
-                        )}{' '}
-                        nights
-                      </span>
-                      <span>
-                        KES{' '}
-                        {booking.property.price.toLocaleString()}
-                      </span>
-                    </div>
-                    <div className="flex justify-between text-gray-300">
-                      <span>× KES {booking.property.price}</span>
-                      <span>
-                        KES{' '}
-                        {booking.totalPrice.toLocaleString()}
-                      </span>
-                    </div>
+                  <div className="p-4 rounded-lg bg-cyan-500/10 border border-cyan-500/30 space-y-3">
+                    {isPropertyRequest ? (
+                      <>
+                        <div className="flex justify-between text-sm text-gray-300">
+                          <span>Application Fee</span>
+                          <span>KES {item.amount?.toLocaleString()}</span>
+                        </div>
+                        <div className="border-t border-cyan-500/30 pt-2 flex justify-between text-lg font-bold text-white">
+                          <span>Total</span>
+                          <span className="text-cyan-400">KES {item.amount?.toLocaleString()}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="flex justify-between text-sm text-gray-300">
+                          <span>Rental Amount</span>
+                          <span>KES {item.totalPrice?.toLocaleString()}</span>
+                        </div>
+                        <div className="border-t border-cyan-500/30 pt-2 flex justify-between text-lg font-bold text-white">
+                          <span>Total</span>
+                          <span className="text-cyan-400">KES {item.totalPrice?.toLocaleString()}</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
-                  <div className="flex justify-between items-center">
-                    <div className="text-gray-400">Total Amount</div>
-                    <div className="text-3xl font-bold text-cyan-400">
-                      KES {booking.totalPrice.toLocaleString()}
+                  {!paymentStatus || paymentStatus === 'failed' ? (
+                    <>
+                      <PremiumButton
+                        variant="solid"
+                        size="lg"
+                        onClick={handlePayment}
+                        disabled={isProcessing}
+                        className="w-full"
+                      >
+                        {isProcessing
+                          ? 'Processing...'
+                          : isPropertyRequest
+                          ? `Pay KES ${item.amount?.toLocaleString()}`
+                          : `Pay KES ${item.totalPrice?.toLocaleString()}`}
+                      </PremiumButton>
+
+                      <p className="text-xs text-gray-500 text-center">
+                        {isPropertyRequest
+                          ? 'Secure payment via PesaPal (M-Pesa, Airtel Money, Card)'
+                          : 'Secure payment via PesaPal (M-Pesa, Airtel Money, Card)'}
+                      </p>
+                    </>
+                  ) : paymentStatus === 'completed' ? (
+                    <div className="text-center py-4">
+                      <div className="text-green-400 text-lg font-bold mb-2">Payment Successful!</div>
+                      <p className="text-gray-400 text-sm">Your {isPropertyRequest ? 'application' : 'booking'} has been confirmed.</p>
                     </div>
-                  </div>
-
-                  <PremiumButton
-                    variant="solid"
-                    size="lg"
-                    onClick={handlePayment}
-                    disabled={isProcessing}
-                    className="w-full"
-                  >
-                    {isProcessing
-                      ? 'Processing...'
-                      : 'Pay with PesaPal'}
-                  </PremiumButton>
-
-                  <p className="text-xs text-gray-500 text-center">
-                    By proceeding, you agree to our booking terms and conditions.
-                    Your payment is secure and processed by PesaPal.
-                  </p>
+                  ) : (
+                    <div className="text-center py-4">
+                      <div className="text-red-400 text-lg font-bold mb-2">Payment Failed</div>
+                      <p className="text-gray-400 text-sm">Please try again.</p>
+                    </div>
+                  )}
                 </>
               )}
             </div>

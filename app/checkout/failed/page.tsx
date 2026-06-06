@@ -1,7 +1,7 @@
 'use client';
 
 import React, { Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { staggerContainer, staggerItem } from '@/lib/animations';
@@ -10,7 +10,12 @@ import { Footer } from '@/components/Footer';
 
 function FailedContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const bookingId = searchParams.get('bookingId');
+  const propertyRequestId = searchParams.get('propertyRequestId');
+  const isPropertyRequest = !!propertyRequestId;
+
+  const referenceId = bookingId || propertyRequestId;
 
   return (
     <main className="min-h-screen bg-gradient-to-b from-slate-950 to-slate-900">
@@ -49,10 +54,13 @@ function FailedContent() {
           </motion.div>
 
           <motion.div variants={staggerItem} className="space-y-3">
-            <h1 className="text-4xl font-bold text-white">Payment Failed</h1>
+            <h1 className="text-4xl font-bold text-white">
+              {isPropertyRequest ? 'Application Payment Failed' : 'Payment Failed'}
+            </h1>
             <p className="text-gray-400 text-lg">
-              Unfortunately, your payment could not be processed. Please try again or
-              use a different payment method.
+              {isPropertyRequest
+                ? 'Unfortunately, your payment could not be processed. Please try again to complete your application.'
+                : 'Unfortunately, your payment could not be processed. Please try again or use a different payment method.'}
             </p>
           </motion.div>
 
@@ -82,8 +90,10 @@ function FailedContent() {
           </motion.div>
 
           <motion.div variants={staggerItem} className="flex flex-col gap-3">
-            {bookingId && (
-              <Link href={`/checkout?bookingId=${bookingId}`}>
+            {referenceId && (
+              <Link
+                href={`/checkout?${isPropertyRequest ? 'propertyRequestId' : 'bookingId'}=${referenceId}`}
+              >
                 <button className="w-full px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors font-semibold">
                   Try Payment Again
                 </button>

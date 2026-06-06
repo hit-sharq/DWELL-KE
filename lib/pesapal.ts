@@ -11,13 +11,14 @@ interface PesaPalConfig {
 }
 
 interface PaymentRequest {
-  bookingId: string;
+  id: string;
   amount: number;
   description: string;
   customerEmail: string;
   customerName: string;
   customerPhone: string;
   currency?: string;
+  callbackType?: 'booking' | 'propertyRequest';
 }
 
 interface PaymentResponse {
@@ -35,7 +36,7 @@ export function initPesaPal(cfg: Partial<PesaPalConfig> = {}): PesaPalConfig {
     consumerKey: process.env.PESAPAL_CONSUMER_KEY || '',
     consumerSecret: process.env.PESAPAL_CONSUMER_SECRET || '',
     apiUrl: process.env.PESAPAL_API_URL || 'https://pesapal.com/api',
-    redirectUrl: process.env.PESAPAL_REDIRECT_URL || `${process.env.NEXT_PUBLIC_APP_URL}/checkout/success`,
+    redirectUrl: process.env.PESAPAL_REDIRECT_URL || `${process.env.NEXT_PUBLIC_APP_URL}/api/pesapal/callback`,
     ...cfg,
   };
 
@@ -59,11 +60,40 @@ export function getConfig(): PesaPalConfig {
 /**
  * Get OAuth token from PesaPal
  */
+function getSafeContentType(response: Response): string {
+  return (response.headers.get('content-type') || '').toLowerCase();
+}
+
+async function parseJsonOrThrow(response: Response, context: string): Promise<any> {
+  const contentType = getSafeContentType(response);
+
+  // Happy path
+  if (contentType.includes('application/json')) {
+    try {
+      return await response.json();
+    } catch (e) {
+      // fallthrough to text
+    }
+  }
+
+  const text = await response.text();
+  const snippet = text.trim().slice(0, 300);
+
+  // Include snippet for diagnosing HTML/endpoint issues, but never include secrets.
+  throw new Error(
+    `[PesaPal ${context}] Non-JSON response (content-type: ${contentType}). Snippet: ${snippet}`
+  );
+}
+
 export async function getOAuthToken(): Promise<string> {
   const cfg = getConfig();
 
   try {
-    const response = await fetch(`${cfg.apiUrl}/oauth/oauth2/token`, {
+    const url = `${cfg.apiUrl}/token`;
+    console.log('[PesaPal Debug] Token URL:', url);
+    console.log('[PesaPal Debug] consumerKey prefix:', cfg.consumerKey.slice(0, 4) + '...');
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/x-www-form-urlencoded',
@@ -75,17 +105,22 @@ export async function getOAuthToken(): Promise<string> {
       }),
     });
 
+    const statusText = await response.text();
+    console.log('[PesaPal Debug] Token response status:', response.status, response.statusText);
+    console.log('[PesaPal Debug] Token response body (first 200 chars):', statusText.slice(0, 200));
+
     if (!response.ok) {
       throw new Error(`Failed to get OAuth token: ${response.statusText}`);
     }
 
-    const data = await response.json();
+    const data = JSON.parse(statusText);
     return data.access_token;
   } catch (error) {
     console.error('[PesaPal OAuth]', error);
     throw error;
   }
 }
+
 
 /**
  * Initiate a payment request with PesaPal
@@ -98,14 +133,17 @@ export async function initiatePayment(
   try {
     const token = await getOAuthToken();
 
+    const callbackType = payment.callbackType || 'booking';
+    const callbackUrl = `${cfg.redirectUrl}`;
+
     const payload = {
-      id: payment.bookingId,
+      id: payment.id,
       currency: payment.currency || 'KES',
       amount: payment.amount,
       description: payment.description,
-      callback_url: `${cfg.redirectUrl}?bookingId=${payment.bookingId}`,
-      notification_id: `booking-${payment.bookingId}`,
-      merchant_reference: `DWELL-${payment.bookingId}-${Date.now()}`,
+      callback_url: callbackUrl,
+      notification_id: `${callbackType}-${payment.id}`,
+      merchant_reference: `DWELL-${payment.id}-${Date.now()}`,
       billing_address: {
         email_address: payment.customerEmail,
         phone_number: payment.customerPhone,
@@ -124,13 +162,15 @@ export async function initiatePayment(
     });
 
     if (!response.ok) {
-      const error = await response.json();
+      const errorBody = await parseJsonOrThrow(response, 'Payment Initiation');
       throw new Error(
-        error.error_description || 'Failed to initiate payment'
+        errorBody?.error_description ||
+          errorBody?.message ||
+          'Failed to initiate payment'
       );
     }
 
-    const data = await response.json();
+    const data = await parseJsonOrThrow(response, 'Payment Initiation');
     return {
       order_tracking_id: data.order_tracking_id,
       merchant_reference: payload.merchant_reference,
@@ -138,6 +178,7 @@ export async function initiatePayment(
       status_code: data.status_code,
       status_description: data.status_description,
     };
+
   } catch (error) {
     console.error('[PesaPal Payment Initiation]', error);
     throw error;

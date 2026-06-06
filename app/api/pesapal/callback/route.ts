@@ -1,10 +1,12 @@
 import { prisma } from '@/lib/db';
-import { getPaymentStatus } from '@/lib/pesapal';
+import { getPaymentStatus, initPesaPal } from '@/lib/pesapal';
 import { NextRequest, NextResponse } from 'next/server';
+
+initPesaPal();
 
 export async function GET(req: NextRequest) {
   try {
-    const { searchParams } = new URL(req.url);
+    const searchParams = req.nextUrl.searchParams;
     const pesapalReference = searchParams.get('pesapal_reference_id');
     const orderTrackingId = searchParams.get('orderTrackingId');
 
@@ -15,7 +17,6 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Query payment status from PesaPal
     const paymentStatus = await getPaymentStatus(pesapalReference);
 
     if (!paymentStatus) {
@@ -25,10 +26,14 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Find payment record by reference
     const payment = await prisma.payment.findUnique({
       where: { reference: pesapalReference },
-      include: { booking: true },
+      include: {
+        booking: true,
+        propertyRequest: {
+          include: { property: true },
+        },
+      },
     });
 
     if (!payment) {
@@ -38,33 +43,143 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    // Update payment status based on PesaPal response
-    const newStatus =
-      paymentStatus.status === 'COMPLETED' ? 'completed' : 'failed';
+    let newStatus: 'completed' | 'failed' = paymentStatus.status === 'COMPLETED' ? 'completed' : 'failed';
+
+    try {
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          status: newStatus,
+          pesaPalReference: pesapalReference,
+          merchantReference: payment.merchantReference,
+          transactionCode: paymentStatus.transaction_code || paymentStatus.transactionId || null,
+        },
+      });
+    } catch (updateError) {
+      console.error('[Payment Update]', updateError);
+    }
+
+    let redirectTo = '/checkout/failed';
+    let referenceId = payment.id;
+
+    if (newStatus === 'completed') {
+      if (payment.bookingId && payment.booking) {
+        try {
+          await prisma.booking.update({
+            where: { id: payment.bookingId },
+            data: { status: 'confirmed' },
+          });
+        } catch (e) {
+          console.error('[Booking Update]', e);
+        }
+      }
+
+      if (payment.propertyRequestId && payment.propertyRequest) {
+        try {
+          await prisma.propertyRequest.update({
+            where: { id: payment.propertyRequestId },
+            data: { status: 'pending', paidAt: new Date() },
+          });
+        } catch (e) {
+          console.error('[PropertyRequest Update]', e);
+        }
+      }
+
+      redirectTo = '/checkout/success';
+    }
+
+    const url = new URL(redirectTo, req.url);
+    url.searchParams.set('status', newStatus);
+    url.searchParams.set('orderTrackingId', orderTrackingId || payment.orderTrackingId || '');
+    if (payment.bookingId) url.searchParams.set('bookingId', payment.bookingId);
+    if (payment.propertyRequestId) url.searchParams.set('propertyRequestId', payment.propertyRequestId);
+
+    return NextResponse.redirect(url, 302);
+  } catch (error: any) {
+    console.error('[PesaPal Callback]', error);
+    try {
+      return NextResponse.redirect(new URL('/checkout/failed', req.url), 302);
+    } catch {
+      return NextResponse.json(
+        { error: 'Failed to process callback' },
+        { status: 500 }
+      );
+    }
+  }
+}
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json();
+    const {
+      OrderTrackingId,
+      OrderMerchantReference,
+      TransactionCode,
+      TransactionStatus,
+      PaymentMethod,
+    } = body;
+
+    console.log('[PesaPal IPN]', {
+      OrderTrackingId,
+      OrderMerchantReference,
+      TransactionStatus,
+    });
+
+    const payment = await prisma.payment.findFirst({
+      where: { merchantReference: OrderMerchantReference },
+      include: { booking: true, propertyRequest: { include: { property: true } } },
+    }) as any;
+
+    if (!payment) {
+      console.warn('[PesaPal IPN] Payment not found:', OrderMerchantReference);
+      return NextResponse.json({ status: 'ok' }, { status: 200 });
+    }
+
+    let newStatus: 'completed' | 'failed' | 'pending' = 'pending';
+    let relatedStatus: string = '';
+
+    if (TransactionStatus === 'COMPLETED') {
+      newStatus = 'completed';
+      relatedStatus = 'confirmed';
+    } else if (TransactionStatus === 'FAILED' || TransactionStatus === 'INVALID') {
+      newStatus = 'failed';
+      relatedStatus = 'cancelled';
+    }
+
+    const updateData: any = {
+      status: newStatus,
+      pesaPalReference: PaymentMethod || null,
+      transactionCode: TransactionCode || null,
+    };
 
     await prisma.payment.update({
       where: { id: payment.id },
-      data: { status: newStatus },
+      data: updateData,
     });
 
-    // If payment is completed, update booking status
-    if (newStatus === 'completed') {
-      await prisma.booking.update({
-        where: { id: payment.bookingId },
-        data: { status: 'confirmed' },
-      });
+    if (relatedStatus) {
+      if (payment.bookingId && payment.booking) {
+        await prisma.booking.update({
+          where: { id: payment.bookingId },
+          data: { status: relatedStatus },
+        });
+      }
+
+      if (payment.propertyRequestId && payment.propertyRequest) {
+        const prStatus = relatedStatus === 'confirmed' ? 'pending' : 'cancelled';
+        await prisma.propertyRequest.update({
+          where: { id: payment.propertyRequestId },
+          data: {
+            status: prStatus,
+            paidAt: relatedStatus === 'confirmed' ? new Date() : null,
+          },
+        });
+      }
     }
 
-    return NextResponse.json({
-      success: true,
-      status: newStatus,
-      bookingId: payment.bookingId,
-    });
+    return NextResponse.json({ status: 'ok' }, { status: 200 });
   } catch (error: any) {
-    console.error('[PesaPal Callback]', error);
-    return NextResponse.json(
-      { error: 'Failed to process callback' },
-      { status: 500 }
-    );
+    console.error('[PesaPal IPN]', error);
+    return NextResponse.json({ status: 'ok' }, { status: 200 });
   }
 }
