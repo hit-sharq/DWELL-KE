@@ -33,7 +33,14 @@ export async function POST(req: NextRequest) {
       if (propertyRequestId) {
         const propertyRequest = await prisma.propertyRequest.findUnique({
           where: { id: propertyRequestId },
-          include: { property: true, tenant: true },
+          include: {
+            property: {
+              select: { id: true, title: true, landlordId: true },
+            },
+            tenant: {
+              select: { id: true, email: true, firstName: true, lastName: true, phoneNumber: true },
+            },
+          },
         });
 
         if (!propertyRequest) {
@@ -62,13 +69,20 @@ export async function POST(req: NextRequest) {
         description = `Application fee for ${propertyRequest.property.title}`;
         customerEmail = propertyRequest.tenant.email;
         customerName = `${propertyRequest.tenant.firstName || ''} ${propertyRequest.tenant.lastName || ''}`.trim();
-        customerPhone = (propertyRequest.tenant as any).phoneNumber || (propertyRequest.tenant as any).phone || '+254';
+        customerPhone = propertyRequest.tenant.phoneNumber || '+254';
         referenceId = propertyRequest.id;
         redirectType = 'propertyRequest';
       } else if (bookingId) {
         const booking = await prisma.booking.findUnique({
           where: { id: bookingId },
-          include: { tenant: true, property: true },
+          include: {
+            tenant: {
+              select: { id: true, email: true, firstName: true, lastName: true, phoneNumber: true },
+            },
+            property: {
+              select: { id: true, title: true },
+            },
+          },
         });
 
         if (!booking) {
@@ -94,7 +108,7 @@ export async function POST(req: NextRequest) {
         description = `Booking for ${booking.property.title}`;
         customerEmail = booking.tenant.email;
         customerName = `${booking.tenant.firstName} ${booking.tenant.lastName}`;
-        customerPhone = (booking.tenant as any).phoneNumber || (booking.tenant as any).phone || '+254';
+        customerPhone = booking.tenant.phoneNumber || '+254';
         referenceId = booking.id;
         redirectType = 'booking';
       } else {

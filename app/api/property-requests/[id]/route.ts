@@ -75,7 +75,7 @@ export async function PATCH(
             lastName: true,
             profileImage: true,
             email: true,
-            phone: true,
+            phoneNumber: true,
           },
         },
         property: {
@@ -98,7 +98,11 @@ export async function PATCH(
       },
     });
 
-    return NextResponse.json(updatedRequest);
+    return NextResponse.json({
+      ...updatedRequest,
+      createdAt: updatedRequest.createdAt?.toISOString(),
+      updatedAt: updatedRequest.updatedAt?.toISOString(),
+    });
   } catch (error: any) {
     console.error('[Property Requests PATCH]', error);
     return NextResponse.json(

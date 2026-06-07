@@ -103,7 +103,7 @@ export async function POST(req: NextRequest) {
   } catch (error: any) {
     console.error('[Property Requests POST]', error);
     return NextResponse.json(
-      { error: 'Failed to submit property request' },
+      { error: 'Failed to submit property request', message: error?.message },
       { status: 500 }
     );
   }
@@ -137,7 +137,7 @@ export async function GET(req: NextRequest) {
               lastName: true,
               profileImage: true,
               email: true,
-              phone: true,
+              phoneNumber: true,
             },
           },
           property: {
@@ -152,7 +152,7 @@ export async function GET(req: NextRequest) {
                   id: true,
                   firstName: true,
                   lastName: true,
-                  phone: true,
+                  phoneNumber: true,
                   email: true,
                 },
               },
@@ -174,7 +174,7 @@ export async function GET(req: NextRequest) {
       }
 
       const isTenant = request.tenantId === user.id;
-      const isLandlord = request.property.landlordId === user.id;
+      const isLandlord = request.property.landlord.id === user.id;
       const isAdmin = user.role === 'admin';
 
       if (!isTenant && !isLandlord && !isAdmin) {
@@ -231,11 +231,17 @@ export async function GET(req: NextRequest) {
       orderBy: { createdAt: 'desc' },
     });
 
-    return NextResponse.json(requests);
+    return NextResponse.json(
+      requests.map((r) => ({
+        ...r,
+        createdAt: r.createdAt?.toISOString(),
+        updatedAt: r.updatedAt?.toISOString(),
+      }))
+    );
   } catch (error: any) {
     console.error('[Property Requests GET]', error);
     return NextResponse.json(
-      { error: 'Failed to fetch property requests' },
+      { error: 'Failed to fetch property requests', message: error?.message },
       { status: 500 }
     );
   }
