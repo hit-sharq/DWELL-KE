@@ -85,41 +85,38 @@ async function parseJsonOrThrow(response: Response, context: string): Promise<an
   );
 }
 
-export async function getOAuthToken(): Promise<string> {
-  const cfg = getConfig();
-
-  try {
-    const url = `${cfg.apiUrl}/token`;
-    console.log('[PesaPal Debug] Token URL:', url);
-    console.log('[PesaPal Debug] consumerKey prefix:', cfg.consumerKey.slice(0, 4) + '...');
+  export async function getOAuthToken(): Promise<string> {
+    const cfg = getConfig();
+    const url = `${cfg.apiUrl}/api/Auth/RequestToken`;
 
     const response = await fetch(url, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        client_id: cfg.consumerKey,
-        client_secret: cfg.consumerSecret,
-        grant_type: 'client_credentials',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        consumer_key: cfg.consumerKey,
+        consumer_secret: cfg.consumerSecret,
       }),
     });
 
-    const statusText = await response.text();
-    console.log('[PesaPal Debug] Token response status:', response.status, response.statusText);
-    console.log('[PesaPal Debug] Token response body (first 200 chars):', statusText.slice(0, 200));
-
     if (!response.ok) {
-      throw new Error(`Failed to get OAuth token: ${response.statusText}`);
+      const errorBody = await parseJsonOrThrow(response, 'OAuth');
+      const msg =
+        typeof errorBody === 'string'
+          ? errorBody
+          : JSON.stringify(errorBody);
+      throw new Error(
+        `PesaPal OAuth failed (${response.status}): ${msg.slice(0, 500)}`
+      );
     }
 
-    const data = JSON.parse(statusText);
-    return data.access_token;
-  } catch (error) {
-    console.error('[PesaPal OAuth]', error);
-    throw error;
+    const data = await parseJsonOrThrow(response, 'OAuth');
+    if (data.error || !data.token) {
+      throw new Error(
+        data.message || data.error_description || 'PesaPal auth error'
+      );
+    }
+    return data.token;
   }
-}
 
 
 /**
@@ -136,7 +133,7 @@ export async function initiatePayment(
     const callbackType = payment.callbackType || 'booking';
     const callbackUrl = `${cfg.redirectUrl}`;
 
-    const payload = {
+    const payload: any = {
       id: payment.id,
       currency: payment.currency || 'KES',
       amount: payment.amount,
@@ -152,7 +149,12 @@ export async function initiatePayment(
       },
     };
 
-    const response = await fetch(`${cfg.apiUrl}/pesapal/parse-request`, {
+    /* If you register an IPN URL with PesaPal and receive an ipn_id,
+       add it here:
+       if (payment.ipnId) payload.ipn_notification_id = payment.ipnId;
+    */
+
+    const response = await fetch(`${cfg.apiUrl}/api/Transactions/SubmitOrderRequest`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -197,7 +199,7 @@ export async function getPaymentStatus(
     const token = await getOAuthToken();
 
     const response = await fetch(
-      `${cfg.apiUrl}/pesapal/query-payment-status?order_tracking_id=${orderTrackingId}`,
+      `${cfg.apiUrl}/api/Transactions/GetTransactionStatus?orderTrackingId=${encodeURIComponent(orderTrackingId)}`,
       {
         method: 'GET',
         headers: {

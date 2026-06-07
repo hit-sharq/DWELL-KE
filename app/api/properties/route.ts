@@ -85,6 +85,8 @@ export async function GET(req: NextRequest) {
     const properties = await prisma.property.findMany({
       where,
       include: {
+        // Defensive: if any property rows have broken landlordId, we still
+        // want marketplace to load instead of returning 500.
         landlord: {
           select: {
             id: true,
@@ -94,6 +96,12 @@ export async function GET(req: NextRequest) {
           },
         },
       },
+    }).catch((error) => {
+      console.error('[Property GET] prisma findMany failed', error);
+      // Fallback: return un-landlord-enriched properties (prevents 500)
+      return prisma.property.findMany({
+        where,
+      });
     });
 
     const filtered = properties.filter((p) => {
