@@ -129,15 +129,25 @@ export async function POST(req: NextRequest) {
         callbackType: redirectType,
       });
 
+      if (!paymentResponse.redirect_url) {
+        return NextResponse.json(
+          {
+            error: 'PesaPal did not return a redirect URL',
+            pesapalResponse: paymentResponse,
+          },
+          { status: 502 }
+        );
+      }
+
       const payment = await prisma.payment.create({
         data: {
           amount,
           currency: 'KES',
           status: 'pending',
-          provider: 'pesapal',
+          paymentMethod: 'pesapal',
           orderTrackingId: paymentResponse.order_tracking_id,
           merchantReference: paymentResponse.merchant_reference,
-        } as any,
+        },
       });
 
       if (redirectType === 'booking') {
