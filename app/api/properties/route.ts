@@ -1,131 +1,57 @@
-import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import { auth } from '@clerk/nextjs/server';
 import { isAdminUser } from '@/lib/admin';
 import { sanitize } from '@/lib/sanitize';
 import { withRateLimit } from '@/lib/rate-limit';
 import { NextRequest, NextResponse } from 'next/server';
 
-function createErrorResponse(error: string, status: number = 500): NextResponse {
-  return NextResponse.json({ error }, { status });
-}
-
 export async function GET(req: NextRequest) {
   try {
-    const searchParams = req.nextUrl.searchParams;
+    const { searchParams } = req.nextUrl;
     const id = searchParams.get('id');
-    const location = searchParams.get('location');
-    const type = searchParams.get('type');
-    const minPrice = searchParams.get('minPrice');
-    const maxPrice = searchParams.get('maxPrice');
-
-    let userId: string | null = null;
-    let user: any = null;
-    let isAdmin = false;
-    let userLandlordId: string | null = null;
-
-    try {
-      const authResult = await auth();
-      userId = authResult.userId;
-    } catch {
-      // Auth error - continue without user context
-    }
-
-    if (userId) {
-      try {
-        user = await prisma.user.findUnique({ where: { clerkId: userId } });
-        isAdmin = isAdminUser(userId);
-        userLandlordId = user && user.role === 'landlord' ? user.id : null;
-      } catch {
-        // DB error - treat as unauthenticated
-      }
-    }
-
-    const accessWhere: any = {};
-    if (isAdmin) {
-    } else if (userLandlordId !== null) {
-      accessWhere.OR = [
-        { verified: true },
-        { landlordId: userLandlordId },
-      ];
-    } else {
-      accessWhere.verified = true;
-    }
 
     if (id) {
       const property = await prisma.property.findUnique({
-        where: { id, ...accessWhere },
+        where: { id },
         include: {
           landlord: {
-            select: {
-              id: true,
-              firstName: true,
-              lastName: true,
-              profileImage: true,
-            },
+            select: { id: true, firstName: true, lastName: true, profileImage: true },
           },
         },
       });
 
       if (!property) {
-        return NextResponse.json([], { status: 200 });
+        return NextResponse.json({ error: 'Property not found' }, { status: 404 });
       }
 
-      return NextResponse.json([property], { status: 200 });
+      return NextResponse.json({
+        ...property,
+        createdAt: property.createdAt?.toISOString(),
+        updatedAt: property.updatedAt?.toISOString(),
+      });
     }
 
-    const where: any = { ...accessWhere };
-
-    if (location) {
-      where.location = { contains: location, mode: 'insensitive' };
-    }
-    if (type) {
-      where.type = type;
-    }
-
-    // 2-step query to avoid relation resolution issues that can cause 500s in production
-    // (e.g., properties referencing a landlord that can't be resolved by Prisma include)
     const properties = await prisma.property.findMany({
-      where,
-    });
-
-    const landlordIds = Array.from(
-      new Set(properties.map((p) => p.landlordId).filter(Boolean))
-    );
-
-    const landlords = landlordIds.length
-      ? await prisma.user.findMany({
-          where: { id: { in: landlordIds } },
+      where: { verified: true },
+      include: {
+        landlord: {
           select: { id: true, firstName: true, lastName: true, profileImage: true },
-        })
-      : [];
-
-    const landlordById = new Map(landlords.map((l) => [l.id, l]));
-
-    const enriched = properties.map((p) => ({
-      ...p,
-      landlord: landlordById.get(p.landlordId) || null,
-    }));
-
-    const filtered = properties.filter((p) => {
-      if (minPrice && p.price < parseFloat(minPrice)) return false;
-      if (maxPrice && p.price > parseFloat(maxPrice)) return false;
-      return true;
+        },
+      },
+      orderBy: { createdAt: 'desc' },
     });
-
-    const filteredIds = new Set(filtered.map((p) => p.id));
-    const result = enriched.filter((p) => filteredIds.has(p.id));
 
     return NextResponse.json(
-      result.map((p) => ({
+      properties.map((p) => ({
         ...p,
-        createdAt: p.createdAt?.toISOString?.() ?? null,
-        updatedAt: p.updatedAt?.toISOString?.() ?? null,
+        createdAt: p.createdAt?.toISOString(),
+        updatedAt: p.updatedAt?.toISOString(),
       }))
     );
   } catch (error: any) {
     console.error('[Property GET]', error);
     return NextResponse.json(
-      { error: 'Failed to fetch properties', details: error?.message, code: error?.code },
+      { error: 'Failed to fetch properties', message: error?.message },
       { status: 500 }
     );
   }
