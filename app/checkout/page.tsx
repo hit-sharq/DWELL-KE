@@ -79,32 +79,34 @@ function CheckoutContent() {
     setIsProcessing(true);
     setError('');
 
-    try {
-      const body = isBooking
-        ? { bookingId }
-        : { propertyRequestId };
+     try {
+       const body = isBooking
+         ? { bookingId }
+         : { propertyRequestId };
 
-      const response = await fetch('/api/payments/initiate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
+       const response = await fetch('/api/payments/initiate', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify(body),
+       });
 
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'Failed to initiate payment');
-      }
+       const contentType = response.headers.get('content-type') || '';
+       const data = contentType.includes('application/json')
+         ? await response.json()
+         : { error: 'Server error — please try again later' };
 
-      const data = await response.json();
+       if (!response.ok) {
+         throw new Error(data.error || data.message || 'Failed to initiate payment');
+       }
 
-      if (data.redirectUrl) {
-        window.location.href = data.redirectUrl;
-      } else {
-        throw new Error('No redirect URL received');
-      }
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
-      setIsProcessing(false);
+       if (data.redirectUrl) {
+         window.location.href = data.redirectUrl;
+       } else {
+         throw new Error('No redirect URL received');
+       }
+     } catch (err) {
+       setError(err instanceof Error ? err.message : 'An error occurred');
+       setIsProcessing(false);
     }
   };
 

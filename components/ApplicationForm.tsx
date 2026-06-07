@@ -41,10 +41,13 @@ export function ApplicationForm({
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await response.json()
+        : { error: 'Server error — please try again later' };
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to submit application');
+        throw new Error(data.error || data.message || 'Failed to submit application');
       }
 
       if (data.requiresPayment) {
@@ -75,10 +78,13 @@ export function ApplicationForm({
         }),
       });
 
-      const data = await response.json();
+      const contentType = response.headers.get('content-type') || '';
+      const data = contentType.includes('application/json')
+        ? await response.json()
+        : { error: 'Server error — please try again later' };
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to initiate payment');
+        throw new Error(data.error || data.message || 'Failed to initiate payment');
       }
 
       if (data.redirectUrl) {
