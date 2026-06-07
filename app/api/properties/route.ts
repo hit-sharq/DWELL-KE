@@ -82,27 +82,29 @@ export async function GET(req: NextRequest) {
       where.type = type;
     }
 
+    // 2-step query to avoid relation resolution issues that can cause 500s in production
+    // (e.g., properties referencing a landlord that can't be resolved by Prisma include)
     const properties = await prisma.property.findMany({
       where,
-      include: {
-        // Defensive: if any property rows have broken landlordId, we still
-        // want marketplace to load instead of returning 500.
-        landlord: {
-          select: {
-            id: true,
-            firstName: true,
-            lastName: true,
-            profileImage: true,
-          },
-        },
-      },
-    }).catch((error) => {
-      console.error('[Property GET] prisma findMany failed', error);
-      // Fallback: return un-landlord-enriched properties (prevents 500)
-      return prisma.property.findMany({
-        where,
-      });
     });
+
+    const landlordIds = Array.from(
+      new Set(properties.map((p) => p.landlordId).filter(Boolean))
+    );
+
+    const landlords = landlordIds.length
+      ? await prisma.user.findMany({
+          where: { id: { in: landlordIds } },
+          select: { id: true, firstName: true, lastName: true, profileImage: true },
+        })
+      : [];
+
+    const landlordById = new Map(landlords.map((l) => [l.id, l]));
+
+    const enriched = properties.map((p) => ({
+      ...p,
+      landlord: landlordById.get(p.landlordId) || null,
+    }));
 
     const filtered = properties.filter((p) => {
       if (minPrice && p.price < parseFloat(minPrice)) return false;
