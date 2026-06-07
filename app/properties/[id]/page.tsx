@@ -108,10 +108,17 @@ export default function PropertyDetailPage() {
     const fetchProperty = async () => {
       try {
         const response = await fetch(`/api/properties/${propertyId}`);
-        if (!response.ok) throw new Error('Failed to fetch property');
+
+        if (!response.ok) {
+          const contentType = response.headers.get('content-type') || '';
+          const text = await response.text();
+          setError(text.includes('<!DOCTYPE')
+            ? 'Server error — please try again later'
+            : 'Failed to fetch property');
+          return;
+        }
 
         const prop = await response.json();
-
         if (!prop || prop.error) {
           setError('Property not found');
           return;

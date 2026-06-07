@@ -7,37 +7,48 @@ export async function GET(req: NextRequest) {
     const id = searchParams.get('id');
 
     if (id) {
-      const property = await prisma.property.findUnique({
-        where: { id },
-        include: {
-          landlord: {
-            select: { id: true, firstName: true, lastName: true, profileImage: true },
+      try {
+        const property = await prisma.property.findUnique({
+          where: { id },
+          include: {
+            landlord: {
+              select: { id: true, firstName: true, lastName: true, profileImage: true },
+            },
           },
-        },
-      });
+        });
 
-      if (!property) {
-        return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+        if (!property) {
+          return NextResponse.json({ error: 'Property not found' }, { status: 404 });
+        }
+
+        return NextResponse.json({
+          id: property.id,
+          title: property.title,
+          description: property.description,
+          type: property.type,
+          price: property.price,
+          location: property.location,
+          bedrooms: property.bedrooms,
+          bathrooms: property.bathrooms,
+          amenities: property.amenities,
+          images: property.images,
+          verified: property.verified,
+          featured: property.featured,
+          status: property.status,
+          landlord: property.landlord,
+          latitude: property.latitude,
+          longitude: property.longitude,
+          area: property.area,
+          createdAt: property.createdAt.toISOString(),
+          updatedAt: property.updatedAt.toISOString(),
+        });
+      } catch (err: any) {
+        console.error('[Property GET by id]', err);
+        return NextResponse.json(
+          { error: 'Property not found or data error', message: err?.message },
+          { status: 404 }
+        );
       }
-
-      return NextResponse.json({
-        id: property.id,
-        title: property.title,
-        description: property.description,
-        type: property.type,
-        price: property.price,
-        location: property.location,
-        bedrooms: property.bedrooms,
-        bathrooms: property.bathrooms,
-        amenities: property.amenities,
-        images: property.images,
-        verified: property.verified,
-        featured: property.featured,
-        status: property.status,
-        landlord: property.landlord,
-        createdAt: property.createdAt.toISOString(),
-        updatedAt: property.updatedAt.toISOString(),
-      });
     }
 
     const properties = await prisma.property.findMany({
