@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/db';
 import { NextRequest, NextResponse } from 'next/server';
 
-/** GET /api/properties/[id] — single property with landlord, reviews, and confirmed bookings */
+/** GET /api/properties/[id] — single property with landlord, no risky include joins */
 export async function GET(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -12,30 +12,34 @@ export async function GET(
       return NextResponse.json({ error: 'Property ID is required' }, { status: 400 });
     }
 
-    // Public property details are allowed, but only verified listings expose reviews/bookings.
     const property = await prisma.property.findUnique({
       where: { id },
-      include: {
-        landlord: {
-          select: {
-            id: true, firstName: true, lastName: true, profileImage: true, email: true, phoneNumber: true,
-          },
-        },
-        reviews: true,
-        bookings: {
-          where: { status: 'confirmed' },
-          select: { checkInDate: true, checkOutDate: true },
-        },
-      },
     });
 
     if (!property) {
       return NextResponse.json({ error: 'Property not found' }, { status: 404 });
     }
 
-    return NextResponse.json(property);
-  } catch (error) {
+    const landlord = await prisma.user.findUnique({
+      where: { id: property.landlordId },
+      select: { id: true, firstName: true, lastName: true, profileImage: true },
+    });
+
+    const result = {
+      ...property,
+      landlord,
+    };
+
+    return NextResponse.json({
+      ...result,
+      createdAt: result.createdAt?.toISOString?.() ?? null,
+      updatedAt: result.updatedAt?.toISOString?.() ?? null,
+    });
+  } catch (error: any) {
     console.error('[Property Detail GET]', error);
-    return NextResponse.json({ error: 'Failed to fetch property' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Failed to fetch property', details: error?.message },
+      { status: 500 }
+    );
   }
 }

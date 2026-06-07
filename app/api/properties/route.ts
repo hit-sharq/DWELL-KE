@@ -112,11 +112,20 @@ export async function GET(req: NextRequest) {
       return true;
     });
 
-    return NextResponse.json(filtered);
+    const filteredIds = new Set(filtered.map((p) => p.id));
+    const result = enriched.filter((p) => filteredIds.has(p.id));
+
+    return NextResponse.json(
+      result.map((p) => ({
+        ...p,
+        createdAt: p.createdAt?.toISOString?.() ?? null,
+        updatedAt: p.updatedAt?.toISOString?.() ?? null,
+      }))
+    );
   } catch (error: any) {
     console.error('[Property GET]', error);
     return NextResponse.json(
-      { error: 'Failed to fetch properties' },
+      { error: 'Failed to fetch properties', details: error?.message, code: error?.code },
       { status: 500 }
     );
   }
