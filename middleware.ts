@@ -26,6 +26,7 @@ const cspDirectives = [
 
 const isProtectedRoute = createRouteMatcher([
   '/dashboard(.*)',
+  '/checkout(.*)',
   '/properties/(.*)/:edit',
 ]);
 

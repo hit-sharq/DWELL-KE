@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useAuth, SignInButton } from '@clerk/nextjs';
 import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { staggerContainer, staggerItem } from '@/lib/animations';

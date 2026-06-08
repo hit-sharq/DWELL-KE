@@ -29,7 +29,21 @@ interface PaymentResponse {
   status_description: string;
 }
 
+interface IPNRegistrationResponse {
+  url: string;
+  created_date: string;
+  ipn_id: string;
+  notification_type: number;
+  ipn_notification_type_description: string;
+  ipn_status: number;
+  ipn_status_description: string;
+  error: any;
+  status: string;
+}
+
 let config: PesaPalConfig | null = null;
+let registeredIpnId: string | null = null;
+let ipnRegistrationPromise: Promise<string> | null = null;
 
 export function initPesaPal(cfg: Partial<PesaPalConfig> = {}): PesaPalConfig {
   const defaultConfig: PesaPalConfig = {
@@ -47,7 +61,82 @@ export function initPesaPal(cfg: Partial<PesaPalConfig> = {}): PesaPalConfig {
   }
 
   config = defaultConfig;
+  console.log('[PesaPal] Initialized', {
+    apiUrl: config.apiUrl,
+    redirectUrl: config.redirectUrl,
+    consumerKey: config.consumerKey.slice(0, 6) + '...',
+    hasSecret: !!config.consumerSecret,
+    ipnUrl: process.env.PESAPAL_IPN_URL_ID || '(not set, will auto-register)',
+  });
   return config;
+}
+
+export async function ensureIpnRegistered(): Promise<string> {
+  if (registeredIpnId) {
+    console.log('[PesaPal] Using cached IPN ID', { ipnId: registeredIpnId });
+    return registeredIpnId;
+  }
+  if (ipnRegistrationPromise) return ipnRegistrationPromise;
+
+  ipnRegistrationPromise = (async () => {
+    const cfg = getConfig();
+    const ipnUrl = process.env.PESAPAL_IPN_URL_ID || cfg.redirectUrl;
+
+    console.log('[PesaPal] Registering IPN URL', { ipnUrl, apiUrl: cfg.apiUrl });
+
+    const token = await getOAuthToken();
+    console.log('[PesaPal] Got OAuth token');
+
+    const registerUrl = `${cfg.apiUrl.replace(/\/$/, '')}/api/URLSetup/RegisterIPN`;
+    console.log('[PesaPal] IPN registration URL', { registerUrl });
+
+    const response = await fetch(registerUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        url: ipnUrl,
+        ipn_notification_type: 'GET',
+      }),
+    });
+
+    const text = await response.text();
+    console.log('[PesaPal] IPN registration raw response', {
+      status: response.status,
+      body: text.slice(0, 500),
+    });
+
+    let data: IPNRegistrationResponse;
+    try {
+      data = JSON.parse(text);
+    } catch {
+      throw new Error(
+        `[PesaPal IPN Registration] Non-JSON response (status ${response.status}): ${text.slice(0, 200)}`
+      );
+    }
+
+    if (data.error || !data.ipn_id) {
+      const errMsg = data.error?.message || JSON.stringify(data.error) || 'No ipn_id in response';
+      throw new Error(`[PesaPal IPN Registration] ${errMsg}`);
+    }
+
+    registeredIpnId = data.ipn_id;
+    console.log('[PesaPal] IPN registered successfully', {
+      ipnUrl,
+      ipnId: registeredIpnId,
+      status: data.ipn_status,
+      notificationType: data.ipn_notification_type_description,
+    });
+    return registeredIpnId;
+  })();
+
+  return ipnRegistrationPromise;
+}
+
+export function getRegisteredIpnId(): string | null {
+  return registeredIpnId;
 }
 
 export function getConfig(): PesaPalConfig {
@@ -129,31 +218,10 @@ export async function initiatePayment(
 
   try {
     const token = await getOAuthToken();
+    const ipnId = await ensureIpnRegistered();
 
     const callbackType = payment.callbackType || 'booking';
     const callbackUrl = `${cfg.redirectUrl}`;
-
-    const safePaymentId = (payment.id || '')
-      .toString()
-      .replace(/[^A-Za-z0-9_-]/g, '')
-      .slice(0, 64);
-
-    const safeCallbackType = (callbackType || 'booking')
-      .toString()
-      .replace(/[^A-Za-z0-9_-]/g, '')
-      .slice(0, 32);
-
-    // PesaPal “IPN Listener URL” is the callback URL we receive on.
-    // However, PesaPal also validates a separate “IPN URL ID” value (notification_id).
-    // Use a stable, sanitized notification_id; allow override via env if your dashboard expects a specific one.
-    const notificationIdFromEnv = process.env.PESAPAL_IPN_URL_ID;
-
-    const defaultNotificationId = `DWELL_${safeCallbackType}_${safePaymentId}`.slice(0, 64);
-
-    const notificationId = (notificationIdFromEnv || defaultNotificationId)
-      .toString()
-      .replace(/[^A-Za-z0-9_-]/g, '')
-      .slice(0, 64);
 
     const payload: any = {
       id: payment.id,
@@ -161,8 +229,7 @@ export async function initiatePayment(
       amount: payment.amount,
       description: payment.description,
       callback_url: callbackUrl,
-      // This should match what PesaPal validates as “IPN URL ID”.
-      notification_id: notificationId,
+      notification_id: ipnId,
       merchant_reference: `DWELL-${payment.id}-${Date.now()}`,
       billing_address: {
         email_address: payment.customerEmail,
