@@ -101,9 +101,17 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ ...request, requiresPayment: false }, { status: 201 });
   } catch (error: any) {
-    console.error('[Property Requests POST]', error);
+    console.error('[Property Requests POST]', {
+      message: error?.message,
+      code: error?.code,
+      stack: error?.stack?.substring(0, 200),
+    });
     return NextResponse.json(
-      { error: 'Failed to submit property request', message: error?.message },
+      { 
+        error: 'Failed to submit property request', 
+        message: error?.message,
+        code: error?.code
+      },
       { status: 500 }
     );
   }
@@ -111,20 +119,38 @@ export async function POST(req: NextRequest) {
 
 export async function GET(req: NextRequest) {
   try {
+    const { searchParams } = req.nextUrl;
+    const propertyId = searchParams.get('propertyId');
+    const status = searchParams.get('status');
+    const requestId = searchParams.get('id');
     const { userId } = await auth();
+
+    // If only checking if a request exists (from property page), allow unauthenticated
+    if (propertyId && !requestId && !status && !userId) {
+      try {
+        const count = await prisma.propertyRequest.count({
+          where: {
+            propertyId,
+            status: { notIn: ['cancelled'] },
+          },
+        });
+        return NextResponse.json({ exists: count > 0, count });
+      } catch (dbError: any) {
+        console.error('[Property Requests GET - Public Check Error]', dbError?.message);
+        return NextResponse.json({ exists: false, count: 0 });
+      }
+    }
+
+    // For authenticated requests
     if (!userId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const user = await prisma.user.findUnique({ where: { clerkId: userId } });
     if (!user) {
+      console.error(`[Property Requests GET] User not found for clerkId: ${userId}`);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    const { searchParams } = req.nextUrl;
-    const propertyId = searchParams.get('propertyId');
-    const status = searchParams.get('status');
-    const requestId = searchParams.get('id');
 
     if (requestId) {
       const request = await prisma.propertyRequest.findUnique({
@@ -239,9 +265,17 @@ export async function GET(req: NextRequest) {
       }))
     );
   } catch (error: any) {
-    console.error('[Property Requests GET]', error);
+    console.error('[Property Requests GET]', {
+      message: error?.message,
+      code: error?.code,
+      stack: error?.stack?.substring(0, 200),
+    });
     return NextResponse.json(
-      { error: 'Failed to fetch property requests', message: error?.message },
+      { 
+        error: 'Failed to fetch property requests', 
+        message: error?.message,
+        code: error?.code
+      },
       { status: 500 }
     );
   }
