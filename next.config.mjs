@@ -17,6 +17,20 @@ export default {
   images: {
     unoptimized: true,
   },
+  webpack(config, { isServer }) {
+    // DOMPurify/isomorphic-dompurify pull jsdom/html-encoding-sniffer.
+    // Your runtime fails because html-encoding-sniffer uses require() on an ESM-only dep.
+    // Force these packages to never be bundled/executed on the server.
+    if (isServer) {
+      config.resolve = config.resolve || {};
+      config.resolve.alias = {
+        ...(config.resolve.alias || {}),
+        'isomorphic-dompurify': false,
+        dompurify: false,
+      };
+    }
+    return config;
+  },
   async headers() {
     return [
       {
@@ -26,3 +40,4 @@ export default {
     ];
   },
 }
+
