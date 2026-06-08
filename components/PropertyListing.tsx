@@ -78,7 +78,7 @@ export function PropertyListing() {
       className="space-y-8"
     >
       {/* Filters */}
-      <motion.div variants={scrollReveal} className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <motion.div variants={scrollReveal()} className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <input
           type="text"
           name="location"
@@ -119,7 +119,7 @@ export function PropertyListing() {
 
       {/* Loading State */}
       {isLoading && (
-        <motion.div variants={scrollReveal} className="text-center py-12">
+        <motion.div variants={scrollReveal()} className="text-center py-12">
           <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-400" />
           <p className="text-gray-400 mt-4">Loading properties...</p>
         </motion.div>
@@ -127,7 +127,7 @@ export function PropertyListing() {
 
       {/* Error State */}
       {error && (
-        <motion.div variants={scrollReveal} className="p-4 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400">
+        <motion.div variants={scrollReveal()} className="p-4 rounded-lg bg-red-500/20 border border-red-500/50 text-red-400">
           {error}
         </motion.div>
       )}
@@ -147,7 +147,7 @@ export function PropertyListing() {
           {properties.map((property) => (
             <motion.div
               key={property.id}
-              variants={scrollReveal}
+              variants={scrollReveal()}
               whileHover={{ y: -8 }}
             >
               <Link href={`/properties/${property.id}`}>
@@ -217,7 +217,7 @@ export function PropertyListing() {
 
       {/* Empty State */}
       {!isLoading && properties.length === 0 && (
-        <motion.div variants={scrollReveal} className="text-center py-12">
+        <motion.div variants={scrollReveal()} className="text-center py-12">
           <p className="text-gray-400">No properties found matching your filters.</p>
         </motion.div>
       )}

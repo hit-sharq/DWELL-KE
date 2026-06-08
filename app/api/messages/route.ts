@@ -138,7 +138,7 @@ export async function PATCH(req: NextRequest) {
       return NextResponse.json({ error: 'Message not found' }, { status: 404 });
     }
 
-    if (message.recipientId !== user.id) {
+    if (message.senderId !== user.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 

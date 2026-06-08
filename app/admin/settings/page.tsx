@@ -45,14 +45,14 @@ export default function AdminSettingsPage() {
         });
         if (res.ok) {
           const body: Record<string, unknown> = await res.json();
-          if (body.settings) {
+          if (body.settings && typeof body.settings === 'object') {
             const parsed: SettingsPayload = {
-              maintenanceMode:    Boolean(body.settings.maintenanceMode),
-              emailNotifications: Boolean(body.settings.emailNotifications),
-              allowNewSignups:    Boolean(body.settings.allowNewSignups),
-              fraudSensitivity:   (body.settings.fraudSensitivity as SettingsPayload['fraudSensitivity']) || 'medium',
-              commissionRate:     Number(body.settings.commissionRate) || 10,
-              applicationFee:     Number(body.settings.applicationFee) || 10,
+              maintenanceMode:    Boolean((body.settings as Record<string, unknown>).maintenanceMode),
+              emailNotifications: Boolean((body.settings as Record<string, unknown>).emailNotifications),
+              allowNewSignups:    Boolean((body.settings as Record<string, unknown>).allowNewSignups),
+              fraudSensitivity:   ((body.settings as Record<string, unknown>).fraudSensitivity as SettingsPayload['fraudSensitivity']) || 'medium',
+              commissionRate:     Number((body.settings as Record<string, unknown>).commissionRate) || 10,
+              applicationFee:     Number((body.settings as Record<string, unknown>).applicationFee) || 10,
             };
             setSettings(parsed);
             initialRef.current = { ...parsed };

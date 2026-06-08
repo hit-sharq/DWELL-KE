@@ -32,17 +32,23 @@ export async function GET(req: NextRequest) {
     });
 
     // Shape for front-end (matches existing mock data shape)
-    const shaped = payments.map((p) => ({
-      id: p.id,
-      booking: `${p.booking.tenant.firstName} ${p.booking.tenant.lastName} — ${p.booking.property.title}`,
-      tenant: `${p.booking.tenant.firstName} ${p.booking.tenant.lastName}`,
-      property: p.booking.property.title,
-      amount: `KES ${p.amount.toLocaleString()}`,
-      rawAmount: p.amount,
-      date: p.createdAt.toISOString().split('T')[0],
-      method: p.paymentMethod || 'PesaPal',
-      status: p.status,
-    }));
+    const shaped = payments.map((p) => {
+      const tenantName = p.booking
+        ? `${p.booking.tenant.firstName} ${p.booking.tenant.lastName}`
+        : 'N/A';
+      const propertyTitle = p.booking?.property?.title || 'N/A';
+      return {
+        id: p.id,
+        booking: `${tenantName} — ${propertyTitle}`,
+        tenant: tenantName,
+        property: propertyTitle,
+        amount: `KES ${p.amount.toLocaleString()}`,
+        rawAmount: p.amount,
+        date: p.createdAt.toISOString().split('T')[0],
+        method: p.paymentMethod || 'PesaPal',
+        status: p.status,
+      };
+    });
 
     return NextResponse.json(shaped);
   } catch (error) {
