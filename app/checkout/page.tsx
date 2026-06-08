@@ -91,18 +91,38 @@ function CheckoutContent() {
        });
 
        const contentType = response.headers.get('content-type') || '';
-       const data = contentType.includes('application/json')
-         ? await response.json()
-         : { error: 'Server error — please try again later' };
+       let data: any = null;
+       let rawText = '';
 
-       if (!response.ok) {
-         throw new Error(data.error || data.message || 'Failed to initiate payment');
+       if (contentType.includes('application/json')) {
+         data = await response.json().catch(() => null);
+       } else {
+         rawText = await response.text().catch(() => '');
        }
 
-       if (data.redirectUrl) {
-         window.location.href = data.redirectUrl;
+       // Debug: helps identify when backend returns HTML (<!DOCTYPE ...)
+       console.log('[checkout] initiate status', response.status, { contentType, rawTextSnippet: rawText.slice(0, 200) });
+
+       if (!response.ok) {
+         throw new Error(
+           data?.error ||
+             data?.message ||
+             (rawText ? `Server error: ${rawText.slice(0, 200)}` : 'Failed to initiate payment')
+         );
+       }
+
+       const redirectUrl =
+         data?.redirectUrl ||
+         data?.redirect_url ||
+         data?.payment?.redirect_url;
+
+       if (redirectUrl) {
+         window.location.href = redirectUrl;
        } else {
-         throw new Error('No redirect URL received');
+         // In case API failed but returned non-JSON/HTML, include snippet in error.
+         throw new Error(
+           `No redirect URL received (status=${response.status}). Response: ${rawText ? rawText.slice(0, 300) : JSON.stringify(data).slice(0, 300)}`
+         );
        }
      } catch (err) {
        setError(err instanceof Error ? err.message : 'An error occurred');
