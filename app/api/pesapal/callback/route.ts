@@ -17,7 +17,10 @@ export async function GET(req: NextRequest) {
       );
     }
 
+    console.log('[PesaPal Callback GET] params', { pesapalReference, orderTrackingId });
     const paymentStatus = await getPaymentStatus(pesapalReference);
+    console.log('[PesaPal Callback GET] paymentStatus keys', paymentStatus && typeof paymentStatus === 'object' ? Object.keys(paymentStatus) : paymentStatus);
+
 
     if (!paymentStatus) {
       return NextResponse.json(
@@ -26,8 +29,16 @@ export async function GET(req: NextRequest) {
       );
     }
 
-    const payment = await prisma.payment.findUnique({
-      where: { reference: pesapalReference },
+    // Your initiate flow stores PesaPal identifiers in orderTrackingId/merchantReference.
+    // The PesaPal "pesapal_reference_id" may not map to the Prisma `reference` field.
+    const payment = await prisma.payment.findFirst({
+      where: {
+        OR: [
+          { reference: pesapalReference },
+          { orderTrackingId: orderTrackingId || undefined },
+          { merchantReference: (paymentStatus as any)?.merchant_reference || undefined },
+        ],
+      },
       include: {
         booking: true,
         propertyRequest: {
@@ -37,11 +48,13 @@ export async function GET(req: NextRequest) {
     });
 
     if (!payment) {
+      console.warn('[PesaPal Callback GET] payment not found', { pesapalReference, orderTrackingId });
       return NextResponse.json(
         { error: 'Payment not found' },
         { status: 404 }
       );
     }
+
 
     let newStatus: 'completed' | 'failed' = paymentStatus.status === 'COMPLETED' ? 'completed' : 'failed';
 
@@ -119,22 +132,35 @@ export async function POST(req: NextRequest) {
       PaymentMethod,
     } = body;
 
-    console.log('[PesaPal IPN]', {
+    console.log('[PesaPal IPN] payload received', {
       OrderTrackingId,
       OrderMerchantReference,
       TransactionStatus,
+      PaymentMethod,
     });
 
+
     const payment = await prisma.payment.findFirst({
-      where: { merchantReference: OrderMerchantReference },
+      where: {
+        OR: [
+          { merchantReference: OrderMerchantReference },
+          { orderTrackingId: OrderTrackingId || undefined },
+        ],
+      },
       include: { booking: true, propertyRequest: { include: { property: true } } },
     }) as any;
 
+
     if (!payment) {
-      console.warn('[PesaPal IPN] Payment not found:', OrderMerchantReference);
+      console.warn('[PesaPal IPN] Payment not found', {
+        OrderMerchantReference,
+        OrderTrackingId,
+      });
       return NextResponse.json({ status: 'ok' }, { status: 200 });
     }
 
+
+    // Idempotency: never downgrade a completed payment.
     let newStatus: 'completed' | 'failed' | 'pending' = 'pending';
     let relatedStatus: string = '';
 
@@ -146,8 +172,21 @@ export async function POST(req: NextRequest) {
       relatedStatus = 'cancelled';
     }
 
+    const isAlreadyCompleted = payment.status === 'completed';
+    if (isAlreadyCompleted && newStatus !== 'completed') {
+      // Still update transaction metadata, but do not change state or related entities.
+      await prisma.payment.update({
+        where: { id: payment.id },
+        data: {
+          pesaPalReference: PaymentMethod || null,
+          transactionCode: TransactionCode || null,
+        },
+      });
+      return NextResponse.json({ status: 'ok' }, { status: 200 });
+    }
+
     const updateData: any = {
-      status: newStatus,
+      status: isAlreadyCompleted ? 'completed' : newStatus,
       pesaPalReference: PaymentMethod || null,
       transactionCode: TransactionCode || null,
     };

@@ -36,7 +36,7 @@ export function initPesaPal(cfg: Partial<PesaPalConfig> = {}): PesaPalConfig {
     consumerKey: process.env.PESAPAL_CONSUMER_KEY || '',
     consumerSecret: process.env.PESAPAL_CONSUMER_SECRET || '',
     apiUrl: process.env.PESAPAL_API_URL || 'https://pesapal.com/api',
-    redirectUrl: process.env.PESAPAL_REDIRECT_URL || `${process.env.NEXT_PUBLIC_APP_URL}/api/pesapal/callback`,
+    redirectUrl: process.env.PESAPAL_REDIRECT_URL || `${process.env.NEXT_PUBLIC_APP_URL || 'https://dwell-ke.vercel.app'}/api/pesapal/callback`,
     ...cfg,
   };
 
@@ -133,13 +133,36 @@ export async function initiatePayment(
     const callbackType = payment.callbackType || 'booking';
     const callbackUrl = `${cfg.redirectUrl}`;
 
+    const safePaymentId = (payment.id || '')
+      .toString()
+      .replace(/[^A-Za-z0-9_-]/g, '')
+      .slice(0, 64);
+
+    const safeCallbackType = (callbackType || 'booking')
+      .toString()
+      .replace(/[^A-Za-z0-9_-]/g, '')
+      .slice(0, 32);
+
+    // PesaPal “IPN Listener URL” is the callback URL we receive on.
+    // However, PesaPal also validates a separate “IPN URL ID” value (notification_id).
+    // Use a stable, sanitized notification_id; allow override via env if your dashboard expects a specific one.
+    const notificationIdFromEnv = process.env.PESAPAL_IPN_URL_ID;
+
+    const defaultNotificationId = `DWELL_${safeCallbackType}_${safePaymentId}`.slice(0, 64);
+
+    const notificationId = (notificationIdFromEnv || defaultNotificationId)
+      .toString()
+      .replace(/[^A-Za-z0-9_-]/g, '')
+      .slice(0, 64);
+
     const payload: any = {
       id: payment.id,
       currency: payment.currency || 'KES',
       amount: payment.amount,
       description: payment.description,
       callback_url: callbackUrl,
-      notification_id: `${callbackType}-${payment.id}`,
+      // This should match what PesaPal validates as “IPN URL ID”.
+      notification_id: notificationId,
       merchant_reference: `DWELL-${payment.id}-${Date.now()}`,
       billing_address: {
         email_address: payment.customerEmail,
@@ -149,10 +172,10 @@ export async function initiatePayment(
       },
     };
 
-    /* If you register an IPN URL with PesaPal and receive an ipn_id,
-       add it here:
-       if (payment.ipnId) payload.ipn_notification_id = payment.ipnId;
-    */
+    console.log('[PesaPal] Submitting order', {
+      url: `${cfg.apiUrl}/api/Transactions/SubmitOrderRequest`,
+      payload,
+    });
 
     const response = await fetch(`${cfg.apiUrl}/api/Transactions/SubmitOrderRequest`, {
       method: 'POST',
@@ -165,6 +188,7 @@ export async function initiatePayment(
 
     if (!response.ok) {
       const errorBody = await parseJsonOrThrow(response, 'Payment Initiation');
+      console.log('[PesaPal] HTTP error response', { status: response.status, body: errorBody });
       throw new Error(
         errorBody?.error_description ||
           errorBody?.message ||
@@ -173,6 +197,18 @@ export async function initiatePayment(
     }
 
     const data = await parseJsonOrThrow(response, 'Payment Initiation');
+    console.log('[PesaPal] Full response', { data });
+
+    if (data.status_code && data.status_code !== '000') {
+      throw new Error(
+        `PesaPal error ${data.status_code}: ${data.status_description || 'Unknown error'}`
+      );
+    }
+
+    if (!data.redirect_url) {
+      console.log('[PesaPal] Missing redirect_url in response', { data });
+    }
+
     return {
       order_tracking_id: data.order_tracking_id,
       merchant_reference: payload.merchant_reference,
