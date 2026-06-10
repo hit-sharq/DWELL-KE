@@ -222,7 +222,7 @@ export default function PropertyDetailPage() {
         variants={staggerContainer}
         initial="initial"
         animate="animate"
-        className="container mx-auto px-4 py-8"
+        className="container mx-auto px-4 pt-24 pb-12"
       >
         {/* Single back CTA to avoid flicker between loading/error states */}
         <div className="mb-8">
@@ -309,35 +309,34 @@ export default function PropertyDetailPage() {
               <p className="text-gray-400 text-lg">📍 {property.location}</p>
             </div>
 
-            <div className="grid grid-cols-4 gap-4 p-6 rounded-xl bg-slate-900/50 border border-slate-800">
-              <div>
-                <div className="text-2xl font-bold text-cyan-400">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4 p-6 rounded-xl bg-slate-900/50 border border-slate-800">
+              <div className="min-w-0">
+                <div className="text-2xl font-bold text-cyan-400 truncate">
                   {property.bedrooms}
                 </div>
-                <div className="text-sm text-gray-400">Bedrooms</div>
+                <div className="text-sm text-gray-400 truncate">Bedrooms</div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-cyan-400">
+              <div className="min-w-0">
+                <div className="text-2xl font-bold text-cyan-400 truncate">
                   {property.bathrooms}
                 </div>
-                <div className="text-sm text-gray-400">Bathrooms</div>
+                <div className="text-sm text-gray-400 truncate">Bathrooms</div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-cyan-400">
-                  {property.type.charAt(0).toUpperCase() +
-                    property.type.slice(1)}
+              <div className="min-w-0">
+                <div className="text-2xl font-bold text-cyan-400 truncate">
+                  {property.type.charAt(0).toUpperCase() + property.type.slice(1)}
                 </div>
-                <div className="text-sm text-gray-400">Type</div>
+                <div className="text-sm text-gray-400 truncate">Type</div>
               </div>
-              <div>
-                <div className="text-2xl font-bold text-cyan-400">
+              <div className="min-w-0">
+                <div className="text-2xl font-bold text-cyan-400 truncate">
                   KES {property.price.toLocaleString()}
                 </div>
-                <div className="text-sm text-gray-400">/month</div>
+                <div className="text-sm text-gray-400 truncate">/month</div>
               </div>
             </div>
 
-            <div>
+            <div className="pt-8">
               <h2 className="text-2xl font-bold text-white mb-4">About this property</h2>
               <p className="text-gray-300 leading-relaxed">{property.description}</p>
             </div>

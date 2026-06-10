@@ -188,12 +188,12 @@ export function LandingMarketplacePreview() {
                       <div className="p-4">
                         <div className="text-white font-bold leading-tight">{p.title}</div>
                         <div className="text-gray-400 text-sm mt-1">📍 {p.location}</div>
-                        <div className="flex items-center justify-between mt-3">
+                        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-1 mt-3">
                           <div className="text-cyan-300 font-bold">
                             KES {p.price.toLocaleString()}
-                            <span className="text-gray-500 font-semibold text-xs">/mo</span>
+                            <span className="text-gray-500 font-semibold text-[10px]">/mo</span>
                           </div>
-                          <div className="text-gray-300 text-xs">{p.type}</div>
+                          <div className="text-gray-300 text-[11px]">{p.type}</div>
                         </div>
                       </div>
                     </Link>

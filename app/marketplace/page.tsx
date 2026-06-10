@@ -77,6 +77,16 @@ export default function MarketplacePage() {
 
   const propertyTypes = ['apartment', 'house', 'studio', 'penthouse'];
 
+  const formatPropertyType = (type: string) => {
+    const abbreviations: { [key: string]: string } = {
+      apartment: 'Apt',
+      penthouse: 'Pent',
+      house: 'House',
+      studio: 'Studio',
+    };
+    return abbreviations[type.toLowerCase()] || type.charAt(0).toUpperCase() + type.slice(1);
+  };
+
   return (
     <main className="min-h-screen bg-slate-950">
       <Navigation />
@@ -253,13 +263,13 @@ export default function MarketplacePage() {
                         variants={staggerItem}
                         className="cursor-pointer group"
                       >
-                        <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-b from-slate-900/40 to-slate-900/20 backdrop-blur overflow-hidden hover:border-cyan-400 transition-all duration-300 h-full flex flex-col">
+                        <div className="rounded-xl border border-cyan-500/30 bg-gradient-to-b from-slate-900/40 to-slate-900/20 backdrop-blur overflow-hidden hover:border-cyan-400 transition-all duration-300 h-full flex flex-col min-h-[30rem] sm:min-h-96">
                           <div className="relative h-40 overflow-hidden">
                             {property.images.length > 0 ? (
                               <img
                                 src={property.images[0]}
                                 alt={property.title}
-                                className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
                               />
                             ) : (
                               <div className="w-full h-full bg-slate-800 flex items-center justify-center">
@@ -271,44 +281,53 @@ export default function MarketplacePage() {
                                 Verified
                               </div>
                             )}
-                            <div className="absolute top-2 left-2 px-2 py-0.5 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 text-[10px] font-bold rounded-full capitalize">
-                              {property.type}
-                            </div>
                           </div>
 
                           <div className="p-4 flex-1 flex flex-col">
-                            <h3 className="text-base font-bold text-white mb-1 group-hover:text-cyan-400 transition-colors line-clamp-1">
+                            <h3 className="text-sm font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors line-clamp-1">
                               {property.title}
                             </h3>
-                            <p className="text-gray-400 text-xs mb-3">📍 {property.location}</p>
-                            <div className="flex gap-3 mb-3 text-xs text-gray-300">
-                              <span>🛏️ {property.bedrooms} Bed</span>
-                              <span>🚿 {property.bathrooms} Bath</span>
+                            <p className="text-gray-400 text-[11px] mb-3">📍 {property.location}</p>
+
+                            <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+                              <div className="text-xs text-gray-400 min-w-0">
+                                <div className="text-lg font-bold text-cyan-400 truncate">{property.bedrooms}</div>
+                                <div className="text-[10px] truncate">Bedrooms</div>
+                              </div>
+                              <div className="text-xs text-gray-400 min-w-0">
+                                <div className="text-lg font-bold text-cyan-400 truncate">{property.bathrooms}</div>
+                                <div className="text-[10px] truncate">Bathrooms</div>
+                              </div>
+                              <div className="text-xs text-gray-400 min-w-0">
+                                <div className="text-lg font-bold text-cyan-400 truncate">{formatPropertyType(property.type)}</div>
+                                <div className="text-[10px] truncate">Type</div>
+                              </div>
                             </div>
+
                             {property.amenities.length > 0 && (
-                              <div className="mb-3">
-                                <div className="flex flex-wrap gap-1">
-                                  {property.amenities.slice(0, 2).map((amenity) => (
-                                    <span key={amenity} className="text-[10px] px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-300">
-                                      {amenity}
-                                    </span>
-                                  ))}
-                                  {property.amenities.length > 2 && (
-                                    <span className="text-[10px] px-2 py-0.5 text-gray-400">
-                                      +{property.amenities.length - 2} more
-                                    </span>
-                                  )}
-                                </div>
+                              <div className="mb-3 flex flex-wrap gap-2">
+                                {property.amenities.slice(0, 2).map((amenity) => (
+                                  <span key={amenity} className="text-[10px] px-2 py-1 rounded bg-cyan-500/10 text-cyan-300">
+                                    {amenity}
+                                  </span>
+                                ))}
+                                {property.amenities.length > 2 && (
+                                  <span className="text-[10px] px-2 py-1 text-gray-400">
+                                    +{property.amenities.length - 2}
+                                  </span>
+                                )}
                               </div>
                             )}
+
                             <div className="flex-1" />
-                            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
-                              <div>
-                                <div className="text-lg font-bold text-cyan-400">KES {property.price.toLocaleString()}</div>
-                                <div className="text-[10px] text-gray-500">/month</div>
+
+                            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-4 border-t border-slate-700">
+                              <div className="text-sm sm:text-base font-bold text-cyan-400">
+                                KES {property.price.toLocaleString()}
+                                <span className="text-[9px] sm:text-[10px] text-gray-500 block sm:inline">/month</span>
                               </div>
                               <button
-                                className="px-3 py-1.5 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-xs font-semibold disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="px-3 py-2 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-xs font-semibold disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto whitespace-nowrap"
                                 disabled={activePropertyId === property.id}
                               >
                                 {activePropertyId === property.id ? 'Loading…' : 'View Details'}
