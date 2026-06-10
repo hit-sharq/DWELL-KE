@@ -20,7 +20,7 @@ const stats = [
 
 export function CTASection() {
   return (
-    <section className="relative py-28 overflow-hidden">
+    <section className="relative py-10 sm:py-14 overflow-hidden">
       {/* ─ Atmospheric background ─ */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 gradient-surface-alt" />

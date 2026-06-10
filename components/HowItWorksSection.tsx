@@ -80,7 +80,7 @@ function StepCard({ step, index }: { step: typeof steps[0]; index: number }) {
 export function HowItWorksSection() {
   return (
     <section
-      className="relative py-24 sm:py-32 overflow-hidden"
+      className="relative py-10 sm:py-14 overflow-hidden"
       style={{ background: `
         radial-gradient(ellipse 60% 40% at 20% 40%, rgba(34,211,238,0.04) 0%, transparent 70%),
         radial-gradient(ellipse 40% 30% at 80% 60%, rgba(139,92,246,0.03) 0%, transparent 70%),

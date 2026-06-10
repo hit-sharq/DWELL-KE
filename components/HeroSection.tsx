@@ -167,7 +167,7 @@ export function HeroSection() {
     <section
       ref={sectionRef}
       onMouseMove={handleMove}
-      className="relative h-[100vh] min-h-[680px] overflow-hidden"
+      className="relative min-h-[560px] h-auto overflow-hidden"
     >
       {/*
        * Layer 0 — cinematic base gradient
@@ -275,8 +275,9 @@ export function HeroSection() {
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400/70" />
                       <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400" />
                     </span>
-                    <span className="text-[10px] uppercase tracking-[0.35em] font-mono text-cyan-200/90">
-                      Kenya&apos;s Premiere Property Platform
+                    <span className="text-[10px] uppercase tracking-[0.35em] font-mono">
+                      <span className="text-cyan-300">Kenya&apos;s Premiere</span>
+                      <span className="text-white/90">Property Platform</span>
                     </span>
                   </span>
                 </motion.div>
@@ -355,39 +356,78 @@ export function HeroSection() {
                     </Link>
                   </div>
 
-                  {/* Solar stats strip — floats right */}
+                  {/* Stats + terminal search row */}
                   <motion.div
                     initial={{ opacity: 0, x: 30 }}
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ type: 'spring', damping: 22, stiffness: 150, delay: 1.2 }}
-                    className="glass-strong rounded-2xl px-7 py-5 xl:py-6 border-cyan-400/10 group
-                               hover:border-cyan-400/25 transition-all duration-500"
+                    className="w-full"
                   >
-                    <div className="flex items-center gap-6">
-                      {[
-                        { val: '5K+',  label: 'Properties',    color: 'from-cyan-300 to-blue-400' },
-                        { val: '10K+', label: 'Happy Tenants', color: 'from-blue-400 to-cyan-300' },
-                        { val: '500+', label: 'Developers',    color: 'from-emerald-400 to-green-400' },
-                      ].map((s, i) => (
-                        <div key={i} className="text-center">
-                          <p
-                            className={`text-2xl md:text-3xl font-black font-serif bg-clip-text text-transparent
-                                       bg-gradient-to-r ${s.color}`}
-                          >
-                            {s.val}
-                          </p>
-                          <p className="text-[10px] uppercase tracking-[0.2em] text-gray-400/70 font-sans mt-1">
-                            {s.label}
-                          </p>
+                    <div className="flex flex-col lg:flex-row items-stretch gap-4">
+                      
+                      {/* Terminal-style search */}
+                      <div className="flex-1 glass-strong rounded-2xl border border-cyan-400/10 p-4 font-mono">
+                        <div className="flex items-center gap-2 mb-3">
+                          <span className="w-2.5 h-2.5 rounded-full bg-red-500/80" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-yellow-500/80" />
+                          <span className="w-2.5 h-2.5 rounded-full bg-green-500/80" />
+                          <span className="text-[10px] text-gray-500 uppercase tracking-wider ml-2">dwell-ke://search</span>
                         </div>
-                      ))}
-                      <div className="h-10 w-px bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent" />
-                      <div className="leading-tight">
-                        <p className="text-[9px] uppercase tracking-[0.2em] text-cyan-300/70 font-mono leading-relaxed">
-                          Trust Score
-                        </p>
-                        <p className="text-2xl font-black font-serif text-cyan-300">98.6</p>
+                        <form
+                          onSubmit={(e) => {
+                            e.preventDefault()
+                            const input = (e.target as HTMLFormElement).elements.namedItem('q') as HTMLInputElement
+                            const q = input?.value?.trim()
+                            if (!q) return
+                            window.location.href = `/marketplace?search=${encodeURIComponent(q)}`
+                          }}
+                          className="flex items-center gap-3"
+                        >
+                          <span className="text-cyan-400 select-none">❯</span>
+                          <input
+                            name="q"
+                            placeholder="search Nairobi, Mombasa, Nakuru…"
+                            className="flex-1 bg-transparent text-white placeholder-gray-500/60 outline-none text-sm"
+                          />
+                          <button
+                            type="submit"
+                            className="px-4 py-1.5 rounded-lg bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[11px] uppercase tracking-wider hover:bg-cyan-500/20 transition-colors"
+                          >
+                            Run
+                          </button>
+                        </form>
                       </div>
+
+                      {/* Stats strip */}
+                      <div className="glass-strong rounded-2xl px-4 py-4 sm:px-7 sm:py-5 xl:py-6 border-cyan-400/10 group hover:border-cyan-400/25 transition-all duration-500">
+                        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-6">
+                          {[
+                            { val: '5K+',  label: 'Properties',    color: 'from-cyan-300 to-blue-400' },
+                            { val: '10K+', label: 'Happy Tenants', color: 'from-blue-400 to-cyan-300' },
+                            { val: '500+', label: 'Developers',    color: 'from-emerald-400 to-green-400' },
+                          ].map((s, i) => (
+                            <div key={i} className="text-center">
+                              <p
+                                className={`text-xl sm:text-2xl md:text-3xl font-black font-serif bg-clip-text text-transparent
+                                           bg-gradient-to-r ${s.color}`}
+                              >
+                                {s.val}
+                              </p>
+                              <p className="text-[9px] sm:text-[10px] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-gray-400/70 font-sans mt-1">
+                                {s.label}
+                              </p>
+                            </div>
+                          ))}
+                          <div className="h-6 sm:h-10 w-px bg-gradient-to-b from-transparent via-cyan-400/20 to-transparent" />
+                          <div className="leading-tight">
+                            <p className="text-[9px] uppercase tracking-[0.15em] sm:tracking-[0.2em] text-cyan-300/70 font-mono leading-relaxed">
+                              Trust Score
+                            </p>
+                            <p className="text-xl sm:text-2xl font-black font-serif text-cyan-300">98.6</p>
+                          </div>
+                        </div>
+                      </div>
+
                     </div>
                   </motion.div>
                 </motion.div>

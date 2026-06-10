@@ -5,6 +5,7 @@ import { Analytics } from '@vercel/analytics/next'
 import { Toaster } from '@/components/ui/sonner'
 import OnboardingRedirect from '@/components/OnboardingRedirect'
 import './globals.css'
+import { ThemeProvider } from '@/components/theme-provider'
 
 /* ─── Cinematic type scale ─── */
 const _inter  = Inter({
@@ -53,11 +54,12 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ClerkProvider>
-      <html
-        lang="en"
-        className="dark scroll-smooth"
-        suppressHydrationWarning
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+<ClerkProvider>
+        <html
+          lang="en"
+          className="scroll-smooth"
+          suppressHydrationWarning
         style={{
           // Inject CSS vars so globals uses the right palettes
           ['--font-display' as string]: _serif.variable,
@@ -83,6 +85,8 @@ export default function RootLayout({
           {process.env.NODE_ENV === 'production' && <Analytics />}
         </body>
       </html>
-    </ClerkProvider>
+        </ClerkProvider>
+      </ThemeProvider>
   );
 }
+

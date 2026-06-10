@@ -9,6 +9,8 @@ import { NAV_LINKS, BRAND } from '@/lib/constants';
 import { PremiumButton } from './PremiumButton';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
+import { ThemeToggle } from './ThemeToggle';
+
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
@@ -244,6 +246,8 @@ const fetchRoles = async () => {
 
           {/* Right-side auth/dashboard actions */}
           <div className="hidden sm:flex items-center gap-2.5">
+            <ThemeToggle />
+
             {isLoaded && user ? (
               <>
 {isAdmin && (

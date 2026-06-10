@@ -2,7 +2,6 @@
 
 import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
-import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { staggerContainer, staggerItem } from '@/lib/animations';
 import { Navigation } from '@/components/Navigation';
@@ -180,24 +179,41 @@ export default function PropertyDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-slate-950 flex items-center justify-center">
-        <div className="text-white text-xl">Loading property...</div>
+      <main className="min-h-screen bg-slate-950">
+        <Navigation />
+        <div className="container mx-auto px-4 py-8">
+          <div className="mb-8">
+            <button
+              type="button"
+              onClick={() => router.push('/marketplace')}
+              className="flex items-center gap-2 text-cyan-400 hover:text-cyan-300 transition-colors font-semibold"
+            >
+              <span aria-hidden>←</span>
+              Back to Marketplace
+            </button>
+          </div>
+          <div className="text-center text-white text-xl">Loading property...</div>
+        </div>
+      </main>
+    );
+  }
+
+
+  if (error || !property) {
+    return (
+      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4 px-6 text-center">
+        <div className="text-white text-xl">{error || 'Property not found'}</div>
+        <button
+          type="button"
+          onClick={() => router.push('/marketplace')}
+          className="px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors"
+        >
+          Back to Marketplace
+        </button>
       </div>
     );
   }
 
-  if (error || !property) {
-    return (
-      <div className="min-h-screen bg-slate-950 flex flex-col items-center justify-center gap-4">
-        <div className="text-white text-xl">{error || 'Property not found'}</div>
-        <Link href="/marketplace">
-          <button className="px-6 py-3 bg-cyan-500 text-white rounded-lg hover:bg-cyan-600 transition-colors">
-            Back to Marketplace
-          </button>
-        </Link>
-      </div>
-    );
-  }
 
   return (
     <main className="min-h-screen bg-slate-950">
@@ -208,7 +224,8 @@ export default function PropertyDetailPage() {
         animate="animate"
         className="container mx-auto px-4 py-8"
       >
-        <motion.div variants={staggerItem} className="mb-8">
+        {/* Single back CTA to avoid flicker between loading/error states */}
+        <div className="mb-8">
           <button
             type="button"
             onClick={() => router.push('/marketplace')}
@@ -217,7 +234,8 @@ export default function PropertyDetailPage() {
             <span aria-hidden>←</span>
             Back to Marketplace
           </button>
-        </motion.div>
+        </div>
+
 
         <div className="grid md:grid-cols-3 gap-8">
           <motion.div variants={staggerItem} className="md:col-span-2 space-y-6">
