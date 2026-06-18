@@ -161,8 +161,9 @@ export default function AdminDashboardPage() {
                         </p>
                         <p className="text-gray-500 text-xs">{u.email}</p>
                       </div>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
+<span className={`text-xs px-2 py-1 rounded-full ${
                         u.role === 'admin' ? 'bg-purple-500/20 text-purple-300' :
+                        u.role === 'hotel' ? 'bg-orange-500/20 text-orange-300' :
                         u.role === 'landlord' ? 'bg-cyan-500/20 text-cyan-300' :
                         'bg-blue-500/20 text-blue-300'
                       }`}>

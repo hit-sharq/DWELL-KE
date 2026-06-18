@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 
 interface DashboardNavProps {
-  role: 'tenant' | 'landlord' | 'admin';
+  role: 'tenant' | 'landlord' | 'admin' | 'hotel';
 }
 
 export const DashboardNav: React.FC<DashboardNavProps> = ({ role }) => {
@@ -35,6 +35,14 @@ export const DashboardNav: React.FC<DashboardNavProps> = ({ role }) => {
       { label: 'Properties', href: '/dashboard/admin/properties' },
       { label: 'Analytics', href: '/dashboard/admin/analytics' },
       { label: 'Fraud Detection', href: '/dashboard/admin/fraud' },
+    ],
+    hotel: [
+      { label: 'Overview', href: '/dashboard/hotel' },
+      { label: 'Rooms', href: '/dashboard/hotel/properties' },
+      { label: 'Bookings', href: '/dashboard/hotel/bookings' },
+      { label: 'Earnings', href: '/dashboard/hotel/earnings' },
+      { label: 'Analytics', href: '/dashboard/hotel/analytics' },
+      { label: 'Settings', href: '/dashboard/hotel/settings' },
     ],
   };
 

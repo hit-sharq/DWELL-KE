@@ -6,7 +6,7 @@ import { CldUploadWidget } from 'next-cloudinary';
 import { PremiumButton } from '@/components/PremiumButton';
 import { staggerContainer, staggerItem } from '@/lib/animations';
 
-export function PropertyForm() {
+export function HotelPropertyForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
@@ -20,8 +20,7 @@ export function PropertyForm() {
     bedrooms: '',
     bathrooms: '',
     amenities: '',
-    type: 'apartment',
-    listingType: 'rental',
+    listingType: 'hotel',
   });
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -29,7 +28,7 @@ export function PropertyForm() {
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
@@ -46,13 +45,13 @@ const handleSubmit = async (e: React.FormEvent) => {
           bathrooms: parseInt(formData.bathrooms, 10),
           amenities: formData.amenities.split(',').map(s => s.trim()).filter(Boolean),
           images,
-          listingType: formData.listingType,
+          listingType: 'hotel',
         }),
       });
 
-      if (!response.ok) throw new Error('Failed to create property');
+      if (!response.ok) throw new Error('Failed to create room');
 
-      setSuccess('Property created successfully!');
+      setSuccess('Room created successfully!');
       setFormData({
         title: '',
         description: '',
@@ -61,8 +60,7 @@ const handleSubmit = async (e: React.FormEvent) => {
         bedrooms: '',
         bathrooms: '',
         amenities: '',
-        type: 'apartment',
-        listingType: 'rental',
+        listingType: 'hotel',
       });
       setImages([]);
     } catch (err) {
@@ -98,35 +96,32 @@ const handleSubmit = async (e: React.FormEvent) => {
         </motion.div>
       )}
 
-      {/* Title */}
       <motion.div variants={staggerItem}>
-        <label className="block text-sm font-bold text-white mb-2">Property Title</label>
+        <label className="block text-sm font-bold text-white mb-2">Room Title</label>
         <input
           type="text"
           name="title"
           value={formData.title}
           onChange={handleInputChange}
-          placeholder="Modern 2-Bedroom Apartment in Westlands"
+          placeholder="Deluxe King Room"
           className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
           required
         />
       </motion.div>
 
-      {/* Description */}
       <motion.div variants={staggerItem}>
         <label className="block text-sm font-bold text-white mb-2">Description</label>
         <textarea
           name="description"
           value={formData.description}
           onChange={handleInputChange}
-          placeholder="Describe your property in detail..."
+          placeholder="Describe your room in detail..."
           rows={4}
           className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all resize-none"
           required
         />
       </motion.div>
 
-      {/* Location */}
       <motion.div variants={staggerItem}>
         <label className="block text-sm font-bold text-white mb-2">Location</label>
         <input
@@ -134,52 +129,21 @@ const handleSubmit = async (e: React.FormEvent) => {
           name="location"
           value={formData.location}
           onChange={handleInputChange}
-          placeholder="Westlands, Nairobi"
+          placeholder="Hotel Name, City"
           className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
           required
         />
       </motion.div>
 
-      {/* Property Type */}
-      <motion.div variants={staggerItem}>
-        <label className="block text-sm font-bold text-white mb-2">Property Type</label>
-        <select
-          name="type"
-          value={formData.type}
-          onChange={handleInputChange}
-          className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
-        >
-          <option value="apartment">Apartment</option>
-          <option value="house">House</option>
-          <option value="studio">Studio</option>
-          <option value="penthouse">Penthouse</option>
-        </select>
-      </motion.div>
-
-      {/* Listing Type */}
-      <motion.div variants={staggerItem}>
-        <label className="block text-sm font-bold text-white mb-2">Listing Type</label>
-        <select
-          name="listingType"
-          value={formData.listingType}
-          onChange={handleInputChange}
-          className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
-        >
-          <option value="rental">Rental</option>
-          <option value="hotel">Hotel</option>
-        </select>
-      </motion.div>
-
-      {/* Price & Bedrooms & Bathrooms */}
       <motion.div variants={staggerItem} className="grid grid-cols-3 gap-4">
         <div>
-          <label className="block text-sm font-bold text-white mb-2">Price (KES)</label>
+          <label className="block text-sm font-bold text-white mb-2">Price/Night (KES)</label>
           <input
             type="number"
             name="price"
             value={formData.price}
             onChange={handleInputChange}
-            placeholder="50000"
+            placeholder="15000"
             className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
             required
           />
@@ -191,7 +155,7 @@ const handleSubmit = async (e: React.FormEvent) => {
             name="bedrooms"
             value={formData.bedrooms}
             onChange={handleInputChange}
-            placeholder="2"
+            placeholder="1"
             className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
             required
           />
@@ -210,7 +174,6 @@ const handleSubmit = async (e: React.FormEvent) => {
         </div>
       </motion.div>
 
-      {/* Amenities */}
       <motion.div variants={staggerItem}>
         <label className="block text-sm font-bold text-white mb-2">Amenities (comma-separated)</label>
         <input
@@ -218,58 +181,56 @@ const handleSubmit = async (e: React.FormEvent) => {
           name="amenities"
           value={formData.amenities}
           onChange={handleInputChange}
-          placeholder="WiFi, Gym, Parking, Security, Pool"
+          placeholder="WiFi, TV, AC, Mini-bar, Room Service"
           className="w-full px-4 py-3 rounded-lg bg-slate-800 border border-slate-700 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-400 focus:ring-2 focus:ring-cyan-400/20 transition-all"
         />
       </motion.div>
 
-      {/* Image Upload */}
       <motion.div variants={staggerItem}>
-        <label className="block text-sm font-bold text-white mb-2">Property Images</label>
-<CldUploadWidget
-            onSuccess={(result: any) => {
-              const newUrls = result?.info?.secure_url
-                ? [result.info.secure_url]
-                : Array.isArray(result) 
-                  ? result.map((r: any) => r?.info?.secure_url).filter(Boolean)
-                  : [];
-              setImages(prev => [...prev, ...newUrls]);
-            }}
-            onError={(error: any) => {
-              setError('Failed to upload image: ' + error.message);
-            }}
-            options={{ multiple: true }}
-          >
-           {({ open }) => (
-             <button
-               type="button"
-               onClick={() => open()}
-               className="w-full px-4 py-3 rounded-lg border border-dashed border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/5 transition-colors"
-             >
-               Click to upload images
-             </button>
-           )}
-         </CldUploadWidget>
+        <label className="block text-sm font-bold text-white mb-2">Room Images</label>
+        <CldUploadWidget
+          onSuccess={(result: any) => {
+            const newUrls = result?.info?.secure_url
+              ? [result.info.secure_url]
+              : Array.isArray(result) 
+                ? result.map((r: any) => r?.info?.secure_url).filter(Boolean)
+                : [];
+            setImages(prev => [...prev, ...newUrls]);
+          }}
+          onError={(error: any) => {
+            setError('Failed to upload image: ' + error.message);
+          }}
+          options={{ multiple: true }}
+        >
+         {({ open }) => (
+           <button
+             type="button"
+             onClick={() => open()}
+             className="w-full px-4 py-3 rounded-lg border border-dashed border-cyan-400/50 text-cyan-400 hover:bg-cyan-400/5 transition-colors"
+           >
+             Click to upload images
+           </button>
+         )}
+        </CldUploadWidget>
 
         {images.length > 0 && (
           <div className="mt-4 grid grid-cols-3 gap-4">
             {images.map((img, idx) => (
               <div key={idx} className="relative">
-                <img src={img} alt={`Property ${idx}`} className="w-full h-24 object-cover rounded-lg" />
-<button
-                                   type="button"
-                                   onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))}
-                                   className="absolute top-1 right-1 bg-red-500 text-white px-2 py-1 rounded text-xs"
-                                 >
-                                   Remove
-                                 </button>
+                <img src={img} alt={`Room ${idx}`} className="w-full h-24 object-cover rounded-lg" />
+                <button
+                  type="button"
+                  onClick={() => setImages(prev => prev.filter((_, i) => i !== idx))}
+                  className="absolute top-1 right-1 bg-red-500 text-white px-2 py-1 rounded text-xs"
+                >
+                  Remove
+                </button>
               </div>
             ))}
           </div>
         )}
       </motion.div>
 
-      {/* Submit Button */}
       <motion.div variants={staggerItem}>
         <PremiumButton
           variant="solid"
@@ -278,7 +239,7 @@ const handleSubmit = async (e: React.FormEvent) => {
           disabled={isLoading}
           className="w-full"
         >
-          {isLoading ? 'Creating Property...' : 'Create Property'}
+          {isLoading ? 'Creating Room...' : 'Create Room'}
         </PremiumButton>
       </motion.div>
     </motion.form>

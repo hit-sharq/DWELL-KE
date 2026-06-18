@@ -76,6 +76,10 @@ export default function LandlordDashboardPage() {
             window.location.href = '/dashboard/admin';
             return;
           }
+          if (fetchedRole === 'hotel') {
+            window.location.href = '/dashboard/hotel';
+            return;
+          }
         }
       } catch (error) {
         console.error('Failed to check role:', error);

@@ -1,7 +1,7 @@
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
 import { isAdminUser } from '@/lib/admin';
-import { sendEmail, getLandlordApprovalEmail, getLandlordDenialEmail } from '@/lib/email';
+import { sendEmail, getLandlordApprovalEmail, getLandlordDenialEmail, getHotelApprovalEmail, getHotelDenialEmail } from '@/lib/email';
 import { NextRequest, NextResponse } from 'next/server';
 
 export async function GET(request: NextRequest) {
@@ -13,11 +13,34 @@ export async function GET(request: NextRequest) {
 
     const { searchParams } = new URL(request.url);
     const status = searchParams.get('status');
+    const type = searchParams.get('type') || 'landlord';
     const page = parseInt(searchParams.get('page') || '1');
     const limit = parseInt(searchParams.get('limit') || '10');
     const skip = (page - 1) * limit;
 
     const where = status ? { status } : {};
+
+    if (type === 'hotel') {
+      const [applications, total] = await Promise.all([
+        prisma.hotelApplication.findMany({
+          where,
+          orderBy: { createdAt: 'desc' },
+          skip,
+          take: limit,
+        }),
+        prisma.hotelApplication.count({ where }),
+      ]);
+
+      return NextResponse.json({
+        applications,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.ceil(total / limit),
+        },
+      });
+    }
 
     const [applications, total] = await Promise.all([
       prisma.landlordApplication.findMany({
@@ -55,7 +78,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { applicationId, action, reviewNotes, denialReason } = body;
+    const { applicationId, action, reviewNotes, denialReason, type } = body;
 
     if (!applicationId || !action) {
       return NextResponse.json(
@@ -78,9 +101,11 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const application = await prisma.landlordApplication.findUnique({
-      where: { id: applicationId },
-    });
+    const isHotelApp = type === 'hotel';
+
+    const application = isHotelApp
+      ? await prisma.hotelApplication.findUnique({ where: { id: applicationId } })
+      : await prisma.landlordApplication.findUnique({ where: { id: applicationId } });
 
     if (!application) {
       return NextResponse.json(
@@ -98,28 +123,56 @@ export async function PUT(request: NextRequest) {
 
     const newStatus = action === 'approve' ? 'approved' : 'denied';
 
-    const updatedApplication = await prisma.landlordApplication.update({
-      where: { id: applicationId },
-      data: {
-        status: newStatus,
-        reviewNotes: reviewNotes || null,
-        denialReason: action === 'deny' ? denialReason : null,
-        reviewedBy: userId,
-        reviewedAt: new Date(),
-      },
-    });
+    const updatedApplication = isHotelApp
+      ? await prisma.hotelApplication.update({
+          where: { id: applicationId },
+          data: {
+            status: newStatus,
+            reviewNotes: reviewNotes || null,
+            denialReason: action === 'deny' ? denialReason : null,
+            reviewedBy: userId,
+            reviewedAt: new Date(),
+          },
+        })
+      : await prisma.landlordApplication.update({
+          where: { id: applicationId },
+          data: {
+            status: newStatus,
+            reviewNotes: reviewNotes || null,
+            denialReason: action === 'deny' ? denialReason : null,
+            reviewedBy: userId,
+            reviewedAt: new Date(),
+          },
+        });
 
     if (action === 'approve') {
       await prisma.user.update({
         where: { id: application.userId },
-        data: { role: 'landlord' },
+        data: { role: isHotelApp ? 'hotel' : 'landlord' },
       });
+
+      if (isHotelApp) {
+        await prisma.hotel.create({
+          data: {
+            userId: application.userId,
+            name: (application as any).hotelName,
+            description: null,
+            location: (application as any).address || (application as any).hotelName,
+            starRating: (application as any).starRating,
+            amenities: [],
+            images: [],
+            verified: true,
+            status: 'active',
+          },
+        });
+      }
     }
 
     try {
+      const hotelName = isHotelApp ? (application as any).hotelName : (application as any).fullName;
       const emailContent = action === 'approve'
-        ? getLandlordApprovalEmail(application.fullName)
-        : getLandlordDenialEmail(application.fullName, denialReason);
+        ? (isHotelApp ? getHotelApprovalEmail(hotelName) : getLandlordApprovalEmail(hotelName))
+        : (isHotelApp ? getHotelDenialEmail(hotelName, denialReason) : getLandlordDenialEmail(hotelName, denialReason));
 
       await sendEmail({
         to: application.email,
@@ -133,7 +186,7 @@ export async function PUT(request: NextRequest) {
     return NextResponse.json({
       success: true,
       application: updatedApplication,
-      message: `Application ${newStatus} successfully`,
+      message: `${isHotelApp ? 'Hotel' : 'Landlord'} application ${newStatus} successfully`,
     });
   } catch (error) {
     console.error('Error reviewing application:', error);

@@ -12,6 +12,7 @@ interface Property {
   title: string;
   description: string;
   type: string;
+  listingType: string;
   price: number;
   location: string;
   bedrooms: number;
@@ -34,6 +35,7 @@ export default function MarketplacePage() {
 
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedType, setSelectedType] = useState('all');
+  const [selectedListingType, setSelectedListingType] = useState('all');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [minBedrooms, setMinBedrooms] = useState('');
@@ -58,6 +60,11 @@ export default function MarketplacePage() {
     fetchProperties();
   }, []);
 
+  const listingTypes = ['rental', 'hotel'];
+
+  const formatListingType = (listingType: string) =>
+    listingType === 'hotel' ? 'Hotel' : 'Rental';
+
   useEffect(() => {
     let filtered = properties;
     if (searchQuery) {
@@ -68,12 +75,13 @@ export default function MarketplacePage() {
       );
     }
     if (selectedType !== 'all') filtered = filtered.filter((p) => p.type === selectedType);
+    if (selectedListingType !== 'all') filtered = filtered.filter((p) => p.listingType === selectedListingType);
     if (minPrice) filtered = filtered.filter((p) => p.price >= parseFloat(minPrice));
     if (maxPrice) filtered = filtered.filter((p) => p.price <= parseFloat(maxPrice));
     if (minBedrooms) filtered = filtered.filter((p) => p.bedrooms >= parseInt(minBedrooms, 10));
     if (verifiedOnly) filtered = filtered.filter((p) => p.verified);
     setFilteredProperties(filtered);
-  }, [properties, searchQuery, selectedType, minPrice, maxPrice, minBedrooms, verifiedOnly]);
+  }, [properties, searchQuery, selectedType, selectedListingType, minPrice, maxPrice, minBedrooms, verifiedOnly]);
 
   const propertyTypes = ['apartment', 'house', 'studio', 'penthouse'];
 
@@ -202,6 +210,25 @@ export default function MarketplacePage() {
                 </select>
               </div>
 
+              {/* Listing Type */}
+              <div>
+                <label className="block text-xs font-semibold text-gray-300 mb-1.5">
+                  Listing Type
+                </label>
+                <select
+                  value={selectedListingType}
+                  onChange={(e) => setSelectedListingType(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg bg-slate-800 border border-slate-700 text-white focus:outline-none focus:border-cyan-400 transition-all text-sm"
+                >
+                  <option value="all">All Listings</option>
+                  {listingTypes.map((listingType) => (
+                    <option key={listingType} value={listingType}>
+                      {formatListingType(listingType)}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
               {/* Verified Only */}
               <div className="flex items-center gap-3">
                 <input
@@ -284,9 +311,14 @@ export default function MarketplacePage() {
                           </div>
 
                           <div className="p-4 flex-1 flex flex-col">
-                            <h3 className="text-sm font-bold text-white mb-2 group-hover:text-cyan-400 transition-colors line-clamp-1">
-                              {property.title}
-                            </h3>
+                            <div className="flex items-center justify-between gap-2 mb-2">
+                              <h3 className="text-sm font-bold text-white group-hover:text-cyan-400 transition-colors line-clamp-1">
+                                {property.title}
+                              </h3>
+                              <span className="inline-flex items-center rounded-full bg-slate-800 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-cyan-300">
+                                {formatListingType(property.listingType)}
+                              </span>
+                            </div>
                             <p className="text-gray-400 text-[11px] mb-3">📍 {property.location}</p>
 
                             <div className="grid grid-cols-3 gap-2 mb-3 text-center">
@@ -324,7 +356,9 @@ export default function MarketplacePage() {
                             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-4 border-t border-slate-700">
                               <div className="text-sm sm:text-base font-bold text-cyan-400">
                                 KES {property.price.toLocaleString()}
-                                <span className="text-[9px] sm:text-[10px] text-gray-500 block sm:inline">/month</span>
+                                 <span className="text-[9px] sm:text-[10px] text-gray-500 block sm:inline">
+                                   /{property.listingType === 'hotel' ? 'night' : 'month'}
+                                 </span>
                               </div>
                               <button
                                 className="px-3 py-2 bg-cyan-500/20 border border-cyan-500/50 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors text-xs font-semibold disabled:opacity-70 disabled:cursor-not-allowed w-full sm:w-auto whitespace-nowrap"

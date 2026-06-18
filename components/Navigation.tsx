@@ -14,7 +14,7 @@ import { ThemeToggle } from './ThemeToggle';
 
 export function Navigation() {
   const [isScrolled, setIsScrolled] = useState(false);
-  const [userRole, setUserRole] = useState<'tenant' | 'landlord' | null>(null);
+  const [userRole, setUserRole] = useState<'tenant' | 'landlord' | 'hotel' | null>(null);
   const [isAdmin, setIsAdmin] = useState(false);
 
   const { user, isLoaded } = useUser();
@@ -81,6 +81,7 @@ const fetchRoles = async () => {
 
 
   const isLandlord = userRole === 'landlord';
+  const isHotel = userRole === 'hotel';
   const isMobile = useIsMobile();
   const [mobileOpen, setMobileOpen] = useState(false);
 
@@ -178,14 +179,14 @@ const fetchRoles = async () => {
                           </Link>
                         )}
 
-                        <Link
-                          href={isLandlord ? '/dashboard/landlord' : '/dashboard/tenant'}
-                          onClick={() => setMobileOpen(false)}
-                        >
-                          <PremiumButton variant="ghost" size="sm" className="w-full justify-center">
-                            Dashboard
-                          </PremiumButton>
-                        </Link>
+<Link
+                           href={isLandlord ? '/dashboard/landlord' : isHotel ? '/dashboard/hotel' : '/dashboard/tenant'}
+                           onClick={() => setMobileOpen(false)}
+                         >
+                           <PremiumButton variant="ghost" size="sm" className="w-full justify-center">
+                             Dashboard
+                           </PremiumButton>
+                         </Link>
 
                         <button
                           onClick={() => {
@@ -257,11 +258,11 @@ const fetchRoles = async () => {
                      </PremiumButton>
                    </Link>
                  )}
-                <Link href={isLandlord ? '/dashboard/landlord' : '/dashboard/tenant'}>
-                  <PremiumButton variant="ghost" size="sm">
-                    Dashboard
-                  </PremiumButton>
-                </Link>
+<Link href={isLandlord ? '/dashboard/landlord' : isHotel ? '/dashboard/hotel' : '/dashboard/tenant'}>
+                   <PremiumButton variant="ghost" size="sm">
+                     Dashboard
+                   </PremiumButton>
+                 </Link>
                 <button
                   onClick={() => signOut()}
                   className="

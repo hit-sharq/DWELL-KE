@@ -56,3 +56,32 @@ export function getLandlordDenialEmail(landlordName: string, reason: string): { 
   `;
   return { subject, html };
 }
+
+export function getHotelApprovalEmail(hotelName: string): { subject: string; html: string } {
+  const subject = 'Your Hotel Partnership Application Has Been Approved';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Congratulations!</h2>
+      <p>Your application to become a hotel partner has been approved.</p>
+      <p>You can now start listing your hotel rooms through your dashboard.</p>
+      <p>Thank you for choosing Dwell KE!</p>
+    </div>
+  `;
+  return { subject, html };
+}
+
+export function getHotelDenialEmail(hotelName: string, reason: string): { subject: string; html: string } {
+  const subject = 'Update on Your Hotel Partnership Application';
+  const html = `
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+      <h2>Hello,</h2>
+      <p>Thank you for your interest in becoming a hotel partner.</p>
+      <p>After careful review, we regret to inform you that your application has been denied for the following reason:</p>
+      <p><em>${reason}</em></p>
+      <p>If you have any questions or would like to reapply in the future, please don't hesitate to reach out.</p>
+      <p>Best regards,</p>
+      <p>The Dwell KE Team</p>
+    </div>
+  `;
+  return { subject, html };
+}

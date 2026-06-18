@@ -3,7 +3,7 @@ import { prisma } from '@/lib/db';
 import { isAdminUser } from '@/lib/admin';
 import { NextRequest, NextResponse } from 'next/server';
 
-type Role = 'tenant' | 'landlord' | 'admin';
+type Role = 'tenant' | 'landlord' | 'admin' | 'hotel';
 
 // GET current user or auto-create if missing (server-side role source of truth)
 export async function GET(req: NextRequest) {

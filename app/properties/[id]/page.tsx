@@ -7,12 +7,14 @@ import { staggerContainer, staggerItem } from '@/lib/animations';
 import { Navigation } from '@/components/Navigation';
 import { Footer } from '@/components/Footer';
 import { ApplicationForm } from '@/components/ApplicationForm';
+import { BookingForm } from '@/components/BookingForm';
 
 interface Property {
   id: string;
   title: string;
   description: string;
   type: string;
+  listingType: string;
   price: number;
   location: string;
   bedrooms: number;
@@ -298,13 +300,16 @@ export default function PropertyDetailPage() {
             )}
 
             <div>
-              <div className="flex items-center gap-3 mb-2">
+              <div className="flex flex-wrap items-center gap-3 mb-2">
                 <h1 className="text-3xl font-bold text-white">{property.title}</h1>
                 {property.verified && (
                   <span className="px-3 py-1 bg-green-500/20 border border-green-500/50 text-green-400 text-xs font-bold rounded-full">
                     Verified
                   </span>
                 )}
+                <span className="px-3 py-1 bg-slate-800/80 border border-slate-700 text-slate-200 text-xs font-semibold rounded-full">
+                  {property.listingType === 'hotel' ? 'Hotel' : 'Rental'}
+                </span>
               </div>
               <p className="text-gray-400 text-lg">📍 {property.location}</p>
             </div>
@@ -378,7 +383,9 @@ export default function PropertyDetailPage() {
           </motion.div>
 
           <motion.div variants={staggerItem}>
-            {checkingRequest ? (
+            {property.listingType === 'hotel' ? (
+              <BookingForm propertyId={propertyId} pricePerNight={property.price} />
+            ) : checkingRequest ? (
               <div className="p-6 rounded-2xl bg-slate-900/50 border border-slate-800 text-center">
                 <div className="text-gray-400"> Checking application status...</div>
               </div>

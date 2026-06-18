@@ -12,144 +12,148 @@ datasource db {
 
 // User model
 model User {
-  id            String    @id @default(cuid())
-  clerkId       String    @unique
-  email         String    @unique
-  firstName     String?
-  lastName      String?
-  profileImage  String?
-  phoneNumber   String?
-  role          String    @default("tenant") // tenant, landlord, admin
-  isVerified    Boolean   @default(false)
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  clerkId      String   @unique
+  email        String   @unique
+  firstName    String?
+  lastName     String?
+  profileImage String?
+  phoneNumber  String?
+  role         String   @default("tenant") // tenant, landlord, admin, hotel
+  isVerified   Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   // Relations
-  properties    Property[] @relation("Landlord")
-  bookings      Booking[]
-  reviews       Review[]
-  favorites     Favorite[]
-  messages      Message[]
-  activityLogs  ActivityLog[]
-  contactMessages ContactMessage[]
-  verifiedProperties Property[] @relation("VerifiedBy")
-  propertyRequests PropertyRequest[] @relation("PropertyRequestTenant")
-  viewingsAsTenant Viewing[] @relation("ViewingTenant")
-  viewingsAsLandlord Viewing[] @relation("ViewingLandlord")
+  properties         Property[]        @relation("Landlord")
+  bookings           Booking[]
+  reviews            Review[]
+  favorites          Favorite[]
+  messages           Message[]
+  activityLogs       ActivityLog[]
+  contactMessages    ContactMessage[]
+  verifiedProperties Property[]        @relation("VerifiedBy")
+  propertyRequests   PropertyRequest[] @relation("PropertyRequestTenant")
+  viewingsAsTenant   Viewing[]         @relation("ViewingTenant")
+  viewingsAsLandlord Viewing[]         @relation("ViewingLandlord")
+  hotels             Hotel[]
 
   @@map("users")
 }
 
 // Property model
 model Property {
-  id            String    @id @default(cuid())
-  title         String
-  description   String?   @db.Text
-  type          String    // apartment, house, studio, etc.
-  price         Float     // Price per month or per night
-  location      String
-  latitude      Float?
-  longitude     Float?
-  bedrooms      Int
-  bathrooms     Int
-  area          Float?    // in square meters
-  amenities     String[]  // JSON array
-  images        String[]  // Cloudinary URLs
-  verified      Boolean   @default(false)
-  featured      Boolean   @default(false)
-  status        String    @default("available") // available, occupied, unavailable
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
-  verifiedAt    DateTime?
-  verifiedBy    User?     @relation("VerifiedBy", fields: [verifiedById], references: [id])
-  verifiedById  String?
+  id           String    @id @default(cuid())
+  title        String
+  description  String?   @db.Text
+  type         String // apartment, house, studio, etc.
+  listingType  String    @default("rental") // rental or hotel
+  price        Float // Price per month or per night
+  location     String
+  latitude     Float?
+  longitude    Float?
+  bedrooms     Int
+  bathrooms    Int
+  area         Float? // in square meters
+  amenities    String[] // JSON array
+  images       String[] // Cloudinary URLs
+  verified     Boolean   @default(false)
+  featured     Boolean   @default(false)
+  status       String    @default("available") // available, occupied, unavailable
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  verifiedAt   DateTime?
+  verifiedBy   User?     @relation("VerifiedBy", fields: [verifiedById], references: [id])
+  verifiedById String?
 
-  // Relations
-  landlordId    String
-  landlord      User      @relation("Landlord", fields: [landlordId], references: [id], onDelete: Cascade)
-  bookings      Booking[]
-  reviews       Review[]
-  favorites     Favorite[]
-  messages      Message[]
+  // Relations - either landlord or hotel must be set based on listingType
+  landlordId       String?
+  landlord         User?             @relation("Landlord", fields: [landlordId], references: [id], onDelete: Cascade)
+  hotelId          String?
+  hotel            Hotel?            @relation("HotelProperties", fields: [hotelId], references: [id])
+  bookings         Booking[]
+  reviews          Review[]
+  favorites        Favorite[]
+  messages         Message[]
   propertyRequests PropertyRequest[] @relation("PropertyRequestProperty")
-  viewings      Viewing[] @relation("ViewingProperty")
+  viewings         Viewing[]         @relation("ViewingProperty")
 
   @@map("properties")
 }
 
 // Booking model
 model Booking {
-  id            String    @id @default(cuid())
-  checkInDate   DateTime
-  checkOutDate  DateTime
-  numberOfGuests Int
-  totalPrice    Float
-  status        String    @default("pending") // pending, confirmed, completed, cancelled
-  specialRequests String? @db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id              String   @id @default(cuid())
+  checkInDate     DateTime
+  checkOutDate    DateTime
+  numberOfGuests  Int
+  totalPrice      Float
+  status          String   @default("pending") // pending, confirmed, completed, cancelled
+  specialRequests String?  @db.Text
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
 
   // Relations
-  tenantId      String
-  tenant        User      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  propertyId    String
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
-  payment       Payment?
+  tenantId   String
+  tenant     User     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  payment    Payment?
 
   @@map("bookings")
 }
 
 // Payment model
 model Payment {
-  id                  String    @id @default(cuid())
-  amount              Float
-  currency            String    @default("KES")
-  status              String    @default("pending") // pending, completed, failed, refunded
-  paymentMethod       String?   // pesapal, card, etc.
-  reference           String?   @unique // PesaPal or payment gateway reference
-  orderTrackingId     String?   // PesaPal order tracking ID
-  merchantReference   String?   // PesaPal merchant reference
-  transactionCode     String?   // PesaPal transaction code
-  pesaPalReference    String?   // PesaPal reference (payment method used)
-  createdAt           DateTime  @default(now())
-  updatedAt           DateTime  @updatedAt
+  id                String   @id @default(cuid())
+  amount            Float
+  currency          String   @default("KES")
+  status            String   @default("pending") // pending, completed, failed, refunded
+  paymentMethod     String? // pesapal, card, etc.
+  reference         String?  @unique // PesaPal or payment gateway reference
+  orderTrackingId   String? // PesaPal order tracking ID
+  merchantReference String? // PesaPal merchant reference
+  transactionCode   String? // PesaPal transaction code
+  pesaPalReference  String? // PesaPal reference (payment method used)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Relations
-  bookingId           String?   @unique
-  booking             Booking?  @relation(fields: [bookingId], references: [id], onDelete: SetNull)
-  propertyRequestId   String?   @unique
-  propertyRequest     PropertyRequest? @relation(fields: [propertyRequestId], references: [id], onDelete: SetNull)
+  bookingId         String?          @unique
+  booking           Booking?         @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+  propertyRequestId String?          @unique
+  propertyRequest   PropertyRequest? @relation(fields: [propertyRequestId], references: [id], onDelete: SetNull)
 
   @@map("payments")
 }
 
 // Review model
 model Review {
-  id            String    @id @default(cuid())
-  rating        Int       // 1-5 stars
-  comment       String?   @db.Text
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  rating    Int // 1-5 stars
+  comment   String?  @db.Text
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   // Relations
-  authorId      String
-  author        User      @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  propertyId    String
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  authorId   String
+  author     User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@map("reviews")
 }
 
 // Favorite model
 model Favorite {
-  id            String    @id @default(cuid())
-  createdAt     DateTime  @default(now())
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
 
   // Relations
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  propertyId    String
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@unique([userId, propertyId])
   @@map("favorites")
@@ -157,72 +161,71 @@ model Favorite {
 
 // Message model
 model Message {
-  id            String    @id @default(cuid())
-  content       String    @db.Text
-  isRead        Boolean   @default(false)
-  createdAt     DateTime  @default(now())
+  id        String   @id @default(cuid())
+  content   String   @db.Text
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
 
   // Relations
-  senderId      String
-  sender        User      @relation(fields: [senderId], references: [id], onDelete: Cascade)
-  propertyId    String
-  property      Property  @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  senderId   String
+  sender     User     @relation(fields: [senderId], references: [id], onDelete: Cascade)
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
 
   @@map("messages")
 }
 
 // Activity Log model (for admin)
 model ActivityLog {
-  id            String    @id @default(cuid())
-  action        String    // created_property, deleted_property, approved_property, etc.
-  description   String?   @db.Text
-  metadata      String?   @db.Text // JSON string for additional data
-  createdAt     DateTime  @default(now())
+  id          String   @id @default(cuid())
+  action      String // created_property, deleted_property, approved_property, etc.
+  description String?  @db.Text
+  metadata    String?  @db.Text // JSON string for additional data
+  createdAt   DateTime @default(now())
 
   // Relations
-  userId        String
-  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId String
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("activity_logs")
 }
 
 // Contact Message model (for support form submissions)
 model ContactMessage {
-  id            String    @id @default(cuid())
-  subject       String
-  email         String
-  message       String    @db.Text
-  status        String    @default("pending") // pending, read, responded
-  response      String?   @db.Text
-  createdAt     DateTime  @default(now())
-  respondedAt   DateTime?
+  id          String    @id @default(cuid())
+  subject     String
+  email       String
+  message     String    @db.Text
+  status      String    @default("pending") // pending, read, responded
+  response    String?   @db.Text
+  createdAt   DateTime  @default(now())
+  respondedAt DateTime?
 
   // Relations
-  userId        String?
-  user          User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 
   @@map("contact_messages")
 }
 
 // Site Page model (for CMS content)
 model SitePage {
-  id          String    @id @default(cuid())
-  slug        String    @unique
+  id          String   @id @default(cuid())
+  slug        String   @unique
   title       String
-  content     String?   @db.Text
+  content     String?  @db.Text
   imageUrl    String?
-  isPublished Boolean   @default(false)
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
+  isPublished Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("site_pages")
 }
 
-
 // Site Setting model (for global site settings)
 model SiteSetting {
-  id          String    @id @default(cuid())
-  key         String    @unique
+  id          String  @id @default(cuid())
+  key         String  @unique
   value       String
   description String?
 
@@ -231,90 +234,158 @@ model SiteSetting {
 
 // Property Request model (for tenant requests)
 model PropertyRequest {
-  id            String    @id @default(cuid())
-  type          String    // viewing, interest, application
-  status        String   @default("pending") // pending_payment, pending, approved, declined, cancelled
-  message       String?   // tenant's message
-  amount        Float?    // application fee amount (KES)
+  id                String    @id @default(cuid())
+  type              String // viewing, interest, application
+  status            String    @default("pending") // pending_payment, pending, approved, declined, cancelled
+  message           String? // tenant's message
+  amount            Float? // application fee amount (KES)
   preferredDateTime DateTime? // for viewing requests
-  budget        Float?    // tenant's budget for screening
-  seriousness   String?   // low, medium, high (or a score)
-  paidAt        DateTime? // payment timestamp
-  checkInDate   DateTime? // for application requests
-  checkOutDate  DateTime? // for application requests
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  budget            Float? // tenant's budget for screening
+  seriousness       String? // low, medium, high (or a score)
+  paidAt            DateTime? // payment timestamp
+  checkInDate       DateTime? // for application requests
+  checkOutDate      DateTime? // for application requests
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   // Relations
-  tenantId      String
-  tenant        User      @relation("PropertyRequestTenant", fields: [tenantId], references: [id])
-  propertyId    String
-  property      Property  @relation("PropertyRequestProperty", fields: [propertyId], references: [id])
-  viewing       Viewing?  @relation("ViewingPropertyRequest")
-  payment       Payment?
+  tenantId   String
+  tenant     User     @relation("PropertyRequestTenant", fields: [tenantId], references: [id])
+  propertyId String
+  property   Property @relation("PropertyRequestProperty", fields: [propertyId], references: [id])
+  viewing    Viewing? @relation("ViewingPropertyRequest")
+  payment    Payment?
 
   @@map("property_requests")
 }
 
 // Viewing model (for scheduled property viewings)
 model Viewing {
-  id            String    @id @default(cuid())
+  id                String   @id @default(cuid())
   scheduledDateTime DateTime
-  status        String    @default("scheduled") // scheduled, completed, cancelled, no_show
-  notes         String?
-  createdAt     DateTime  @default(now())
-  updatedAt     DateTime  @updatedAt
+  status            String   @default("scheduled") // scheduled, completed, cancelled, no_show
+  notes             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   // Relations
-  propertyRequest PropertyRequest @relation("ViewingPropertyRequest", fields: [propertyRequestId], references: [id])
-  propertyRequestId String @unique
+  propertyRequest   PropertyRequest @relation("ViewingPropertyRequest", fields: [propertyRequestId], references: [id])
+  propertyRequestId String          @unique
 
-  propertyId      String
-  property        Property      @relation("ViewingProperty", fields: [propertyId], references: [id])
-  tenantId        String
-  tenant          User          @relation("ViewingTenant", fields: [tenantId], references: [id])
-  landlordId      String
-  landlord        User          @relation("ViewingLandlord", fields: [landlordId], references: [id])
+  propertyId String
+  property   Property @relation("ViewingProperty", fields: [propertyId], references: [id])
+  tenantId   String
+  tenant     User     @relation("ViewingTenant", fields: [tenantId], references: [id])
+  landlordId String
+  landlord   User     @relation("ViewingLandlord", fields: [landlordId], references: [id])
 
   @@map("viewings")
 }
 
 // Landlord Onboarding Application model
 model LandlordApplication {
-  id                    String    @id @default(cuid())
-  
+  id String @id @default(cuid())
+
   // Applicant Info
-  userId                String    @unique
-  fullName              String
-  email                 String
-  phoneNumber           String
-  
+  userId      String @unique
+  fullName    String
+  email       String
+  phoneNumber String
+
   // Document URLs (stored in Vercel Blob)
-  nationalIdUrl         String?   // National ID or Passport
-  titleDeedUrl          String?   // Title Deed or Leasehold Certificate
-  managementAgreementUrl String?  // Property Management Agreement (if agent)
-  complianceCertUrl     String?   // Local Authority Compliance Certificates
-  safetyCertUrl         String?   // Safety & Utility Certificates
-  taxComplianceUrl      String?   // Tax Compliance Certificate (KRA PIN)
-  bankProofUrl          String?   // Bank Account Proof
-  leaseTemplateUrl      String?   // Standard Lease Agreement Template
-  
+  nationalIdUrl          String? // National ID or Passport
+  titleDeedUrl           String? // Title Deed or Leasehold Certificate
+  managementAgreementUrl String? // Property Management Agreement (if agent)
+  complianceCertUrl      String? // Local Authority Compliance Certificates
+  safetyCertUrl          String? // Safety & Utility Certificates
+  taxComplianceUrl       String? // Tax Compliance Certificate (KRA PIN)
+  bankProofUrl           String? // Bank Account Proof
+  leaseTemplateUrl       String? // Standard Lease Agreement Template
+
   // Additional Info
-  businessName          String?   // If registering as a business
-  kraPin                String?   // KRA PIN number
-  bankName              String?
-  bankAccountNumber     String?
-  bankAccountName       String?
-  
+  businessName      String? // If registering as a business
+  kraPin            String? // KRA PIN number
+  bankName          String?
+  bankAccountNumber String?
+  bankAccountName   String?
+
   // Application Status
-  status                String    @default("pending") // pending, under_review, approved, denied
-  reviewNotes           String?   @db.Text
-  denialReason          String?   @db.Text
-  reviewedBy            String?   // Admin Clerk ID who reviewed
-  reviewedAt            DateTime?
-  
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
+  status       String    @default("pending") // pending, under_review, approved, denied
+  reviewNotes  String?   @db.Text
+  denialReason String?   @db.Text
+  reviewedBy   String? // Admin Clerk ID who reviewed
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@map("landlord_applications")
+}
+
+// Hotel model
+model Hotel {
+  id          String    @id @default(cuid())
+  name        String
+  description String?   @db.Text
+  location    String
+  latitude    Float?
+  longitude   Float?
+  starRating  Int? // 1-5 star rating
+  amenities   String[] // JSON array of amenities
+  images      String[] // Cloudinary URLs
+  verified    Boolean   @default(false)
+  featured    Boolean   @default(false)
+  status      String    @default("active") // active, inactive, suspended
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  verifiedAt  DateTime?
+
+  // Relations
+  userId     String @unique
+  user       User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  properties Property[] @relation("HotelProperties")
+
+  @@map("hotels")
+}
+
+// Hotel Onboarding Application model
+model HotelApplication {
+  id String @id @default(cuid())
+
+  // Applicant Info
+  userId      String @unique
+  fullName    String
+  email       String
+  phoneNumber String
+  hotelName   String
+
+  // Document URLs (stored in Vercel Blob)
+  businessLicenseUrl   String? // Business License
+  taxComplianceUrl     String? // Tax Compliance Certificate (KRA PIN)
+  bankProofUrl         String? // Bank Account Proof
+  hotelRegistrationUrl String? // Hotel Registration Certificate
+  safetyCertUrl        String? // Safety & Health Certificates
+  insuranceCertUrl     String? // Insurance Certificate
+
+  // Additional Info
+  businessName      String? // Legal business name
+  kraPin            String? // KRA PIN number
+  bankName          String?
+  bankAccountNumber String?
+  bankAccountName   String?
+  starRating        Int? // Expected star rating (1-5)
+  expectedRooms     Int? // Number of rooms expected
+  address           String? // Physical address
+
+  // Application Status
+  status       String    @default("pending") // pending, under_review, approved, denied
+  reviewNotes  String?   @db.Text
+  denialReason String?   @db.Text
+  reviewedBy   String? // Admin Clerk ID who reviewed
+  reviewedAt   DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("hotel_applications")
 }

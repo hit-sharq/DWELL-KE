@@ -3,22 +3,28 @@
 import React from 'react';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
-import { BRAND, NAV_LINKS } from '@/lib/constants';
+import { BRAND } from '@/lib/constants';
 
 /* ─────────────────────────────────────
-   FOOTER — Editorial Luxury Footer
-   Cinematic column layout
-───────────────────────────────────── */
+  FOOTER — Editorial Luxury Footer
+  Cinematic column layout
+──────────────────────────────────── */
 
 const footerCols = [
   {
-    title: 'Product',
+    title: 'Properties',
     links: [
-      { label: 'Properties', href: '/marketplace' },
+      { label: 'Browse All', href: '/marketplace' },
+      { label: 'Hotels', href: '/hotels' },
       { label: 'Pricing', href: '/pricing' },
-      { label: 'Landlord Portal', href: '/dashboard/landlord' },
-      { label: 'Tenant App', href: '/dashboard/tenant' },
       { label: 'AI Tools', href: '/ai-tools' },
+    ],
+  },
+  {
+    title: 'Partners',
+    links: [
+      { label: 'For Landlords', href: '/become-landlord' },
+      { label: 'For Hotels', href: '/become-hotel' },
     ],
   },
   {
@@ -37,16 +43,13 @@ const footerCols = [
       { label: 'News', href: '/news' },
       { label: 'Help Centre', href: '/help' },
       { label: 'Safety Guide', href: '/safety' },
-      { label: 'Property Guide', href: '/guide' },
     ],
   },
   {
     title: 'Legal',
     links: [
       { label: 'Privacy', href: '/privacy' },
-      { label: 'Terms of Service', href: '/terms' },
-      { label: 'Cookie Policy', href: '/cookies' },
-      { label: 'Licences', href: '/licenses' },
+      { label: 'Terms', href: '/terms' },
     ],
   },
 ];
@@ -118,8 +121,8 @@ export function Footer() {
           </motion.div>
 
           {/* ─ Columns grid ─ */}
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-10 mb-16">
-            {/* Brand col — share of 5 */}
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8 mb-12">
+            {/* Brand col */}
             <div className="col-span-2 md:col-span-1 lg:col-span-2">
               <h4 className="font-serif font-bold text-white text-xl mb-5 tracking-tight">
                 {BRAND.name}
@@ -147,9 +150,9 @@ export function Footer() {
               </div>
             </div>
 
-{/* Link columns */}
+            {/* Link columns */}
             {footerCols.map((col) => (
-              <div key={col.title}>
+              <div key={col.title} className="lg:col-span-1">
                 <p className="text-[9px] uppercase tracking-[0.3em] font-mono mb-5 text-cyan-400/40">
                   {col.title}
                 </p>
