@@ -230,7 +230,7 @@ export default function BecomeHotelPage() {
             <CardDescription>You need to be signed in to apply as a hotel partner</CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/sign-in">
+            <Link href="/auth/login">
               <Button className="w-full">Sign In</Button>
             </Link>
           </CardContent>

@@ -10,10 +10,13 @@ export function ThemeToggle() {
 
   if (!mounted) return null
 
+  const next = current === 'dark' ? 'light' : 'dark'
+  const toggle = theme === 'system' ? next : (theme === next ? 'system' : next)
+
   return (
     <button
       type="button"
-      onClick={() => setTheme(current === 'dark' ? 'light' : 'dark')}
+      onClick={() => setTheme(toggle)}
       aria-label="Toggle theme"
       className="p-2 rounded-lg hover:bg-cyan-500/10 transition-colors border border-white/5"
     >

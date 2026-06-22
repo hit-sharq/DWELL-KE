@@ -229,7 +229,7 @@ export default function BecomeLandlordPage() {
             <CardDescription>You need to be signed in to apply as a landlord</CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/sign-in">
+            <Link href="/auth/login">
               <Button className="w-full">Sign In</Button>
             </Link>
           </CardContent>

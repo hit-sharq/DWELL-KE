@@ -1,18 +1,18 @@
 'use client'
 
-import React, { createContext, useContext, useEffect, useState } from 'react'
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react'
 
-type Theme = 'light' | 'dark'
+type Theme = 'light' | 'dark' | 'system'
 
 type ThemeContextValue = {
   theme: Theme
   setTheme: (theme: Theme) => void
-  resolvedTheme: Theme
+  resolvedTheme: Exclude<Theme, 'system'>
   mounted: boolean
 }
 
 const ThemeContext = createContext<ThemeContextValue>({
-  theme: 'light',
+  theme: 'system',
   setTheme: () => {},
   resolvedTheme: 'light',
   mounted: false,
@@ -20,41 +20,64 @@ const ThemeContext = createContext<ThemeContextValue>({
 
 export function ThemeProvider({
   children,
-  defaultTheme = 'light',
+  defaultTheme = 'system',
   storageKey = 'dwell-theme',
 }: {
   children: React.ReactNode
-  defaultTheme?: Theme | 'system'
+  defaultTheme?: Theme
   storageKey?: string
 }) {
-  const [theme, setThemeState] = useState<Theme>('light')
+  const [theme, setThemeState] = useState<Theme>(defaultTheme)
   const [mounted, setMounted] = useState(false)
 
-  const resolvedTheme = theme
+  const resolvedTheme = useMemo<Exclude<Theme, 'system'>>(() => {
+    if (theme === 'system') {
+      if (typeof window !== 'undefined') {
+        return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+      }
+      return 'light'
+    }
+    return theme
+  }, [theme])
+
+  const applyTheme = (resolved: Exclude<Theme, 'system'>) => {
+    const root = document.documentElement
+    root.classList.remove('light', 'dark')
+    root.classList.add(resolved)
+  }
 
   useEffect(() => {
     setMounted(true)
     const stored = (typeof window !== 'undefined'
       ? localStorage.getItem(storageKey)
       : null) as Theme | null
-    if (stored === 'light' || stored === 'dark') {
-      setThemeState(stored)
-      document.documentElement.classList.add(stored)
-      document.documentElement.classList.remove(stored === 'light' ? 'dark' : 'light')
-    } else {
-      const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches
-      const sys = sysDark ? 'dark' : 'light'
-      document.documentElement.classList.add(sys)
-      setThemeState(sys)
+    const initialTheme = (stored === 'light' || stored === 'dark' || stored === 'system')
+      ? stored
+      : defaultTheme
+    setThemeState(initialTheme)
+
+    const sysDark = window.matchMedia('(prefers-color-scheme: dark)').matches
+    const resolved = initialTheme === 'system' ? (sysDark ? 'dark' : 'light') : initialTheme
+    applyTheme(resolved)
+
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)')
+    const handleChange = () => {
+      if (initialTheme === 'system') {
+        applyTheme(mediaQuery.matches ? 'dark' : 'light')
+      }
     }
-  }, [storageKey])
+    mediaQuery.addEventListener('change', handleChange)
+    return () => mediaQuery.removeEventListener('change', handleChange)
+  }, [storageKey, defaultTheme])
 
   const setTheme = (next: Theme) => {
     setThemeState(next)
     if (typeof window !== 'undefined') {
       localStorage.setItem(storageKey, next)
-      document.documentElement.classList.add(next)
-      document.documentElement.classList.remove(next === 'light' ? 'dark' : 'light')
+      const resolved = next === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : next
+      applyTheme(resolved)
     }
   }
 

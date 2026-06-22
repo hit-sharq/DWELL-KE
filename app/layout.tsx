@@ -54,7 +54,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+    <ThemeProvider defaultTheme="system">
 <ClerkProvider>
         <html
           lang="en"
@@ -72,8 +72,9 @@ export default function RootLayout({
             ${_serif.variable}
             font-sans
             antialiased
-            bg-obsidian
-            text-[#F1F5F9]
+            bg-background
+            text-foreground
+
             min-h-screen
             overflow-x-hidden
           `}
